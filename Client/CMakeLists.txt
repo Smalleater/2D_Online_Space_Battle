@@ -18,12 +18,12 @@ FetchContent_MakeAvailable(SFML)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 
-add_executable(2D_Online_Space_Battle_Client src/main.cpp)
+add_executable(2D_Online_Space_Battle_Client src/main.cpp "src/player.cpp" "src/enemy.cpp")
 
 target_include_directories(2D_Online_Space_Battle_Client 
 	PRIVATE 
         ${COMMON_INCLUDE_DIR}
-		${CMAKE_SOURCE_DIR}/include
+		${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 target_link_libraries(2D_Online_Space_Battle_Client PUBLIC ${COMMON_LIB_DIR}/tme_core.lib)

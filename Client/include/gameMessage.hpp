@@ -1,0 +1,8 @@
+#ifndef GAME_MESSAGE_HPP
+#define GAME_MESSAGE_HPP
+
+DECLARE_MESSAGE_BEGIN(NewClientMessage)
+FIELD(int, m_id)
+DECLARE_MESSAGE_END()
+
+#endif

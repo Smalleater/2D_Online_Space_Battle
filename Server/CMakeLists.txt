@@ -14,9 +14,9 @@ add_executable(2D_Online_Space_Battle_Server src/main.cpp)
 target_include_directories(2D_Online_Space_Battle_Server 
 	PRIVATE 
         ${COMMON_INCLUDE_DIR}
-		${CMAKE_SOURCE_DIR}/include
+		${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(2D_Online_Space_Battle_Client PUBLIC ${COMMON_LIB_DIR}/tme_core.lib)
-target_link_libraries(2D_Online_Space_Battle_Client PUBLIC ${COMMON_LIB_DIR}/tme_engine.lib)
-target_link_libraries(2D_Online_Space_Battle_Client PUBLIC ${COMMON_LIB_DIR}/tme_server.lib)
+target_link_libraries(2D_Online_Space_Battle_Server PUBLIC ${COMMON_LIB_DIR}/tme_core.lib)
+target_link_libraries(2D_Online_Space_Battle_Server PUBLIC ${COMMON_LIB_DIR}/tme_engine.lib)
+target_link_libraries(2D_Online_Space_Battle_Server PUBLIC ${COMMON_LIB_DIR}/tme_server.lib)
