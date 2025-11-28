@@ -3,9 +3,15 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+#include "TME/client/client.hpp"
+#include "gameMessage.hpp"
+
 #define SPRITE_LOAD_PATH "resources/sprites/ship.png"
-#define MOVE_SPEED 200.0f
-#define WORLD_SIZE 800.0f
+
+constexpr const float MoveSpeed = 200.0f;
+constexpr const float WorldSize = 800.0f;
+
+using namespace tme;
 
 Player::Player()
 {
@@ -74,6 +80,11 @@ void Player::UpdateRotation(const float _dt, const sf::RenderWindow& _window)
 	sf::Vector2i mousePosition = sf::Mouse::getPosition(_window);
 	sf::Vector2f worldMousePosition = _window.mapPixelToCoords(mousePosition);
 
+	std::shared_ptr<engine::RotationInputMessage> rotationInputMessage = std::make_shared<engine::RotationInputMessage>();
+	rotationInputMessage->m_mouseWorldPosX = worldMousePosition.x;
+	rotationInputMessage->m_mouseWorldPosY = worldMousePosition.y;
+	client::Client::Get()->sendTcpMessage(rotationInputMessage);
+
 	sf::Vector2f shipPosition = m_sprite->getPosition();
 
 	float deltaX = worldMousePosition.x - shipPosition.x;
@@ -91,28 +102,28 @@ void Player::Move(const float _dt)
 	sf::Vector2f rightDirection(-std::sin(rotation), std::cos(rotation));
 
 	sf::Vector2f movement(0.0f, 0.0f);
-	movement += forwardDirection * static_cast<float>(m_moveDirection.x) * MOVE_SPEED * _dt;
-	movement += rightDirection * static_cast<float>(m_moveDirection.y) * MOVE_SPEED * _dt;
+	movement += forwardDirection * static_cast<float>(m_moveDirection.x) * MoveSpeed * _dt;
+	movement += rightDirection * static_cast<float>(m_moveDirection.y) * MoveSpeed * _dt;
 
 	m_sprite->move(movement);
 
 	sf::Vector2f position = m_sprite->getPosition();
 	if (position.x < 0.0f)
 	{
-		position.x += WORLD_SIZE;
+		position.x += WorldSize;
 	}	
-	else if (position.x >= WORLD_SIZE)
+	else if (position.x >= WorldSize)
 	{
-		position.x -= WORLD_SIZE;
+		position.x -= WorldSize;
 	}
 
 	if (position.y < 0.0f)
 	{
-		position.y += WORLD_SIZE;
+		position.y += WorldSize;
 	}	
-	else if (position.y >= WORLD_SIZE)
+	else if (position.y >= WorldSize)
 	{
-		position.y -= WORLD_SIZE;
+		position.y -= WorldSize;
 	}
 
 	m_sprite->setPosition(position);

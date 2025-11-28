@@ -20,6 +20,8 @@ private:
 
 	static void CheckNewEnemy();
 	static void CheckDisconnectedEnemy();
+
+	static void UpdateEnemyRotation();
 };
 
 #endif
