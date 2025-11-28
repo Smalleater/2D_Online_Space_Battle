@@ -66,8 +66,12 @@ void Player::PollEvents(const std::optional<sf::Event>& _event, const float _dt)
 
 void Player::Update(const float _dt, const sf::RenderWindow& _window)
 {
-	UpdateRotation(_dt, _window);
-	Move(_dt);
+	std::shared_ptr<engine::MovementInputMessage> movementInputMessage = std::make_shared<engine::MovementInputMessage>();
+
+	UpdateRotation(movementInputMessage, _dt, _window);
+	Move(movementInputMessage, _dt);
+
+	client::Client::Get()->sendTcpMessage(movementInputMessage);
 }
 
 void Player::Draw(sf::RenderWindow& _window)
@@ -75,15 +79,13 @@ void Player::Draw(sf::RenderWindow& _window)
 	_window.draw(*m_sprite);
 }
 
-void Player::UpdateRotation(const float _dt, const sf::RenderWindow& _window)
+void Player::UpdateRotation(std::shared_ptr<engine::MovementInputMessage> _movementInputMessage, const float _dt, const sf::RenderWindow& _window)
 {
 	sf::Vector2i mousePosition = sf::Mouse::getPosition(_window);
 	sf::Vector2f worldMousePosition = _window.mapPixelToCoords(mousePosition);
 
-	std::shared_ptr<engine::RotationInputMessage> rotationInputMessage = std::make_shared<engine::RotationInputMessage>();
-	rotationInputMessage->m_mouseWorldPosX = worldMousePosition.x;
-	rotationInputMessage->m_mouseWorldPosY = worldMousePosition.y;
-	client::Client::Get()->sendTcpMessage(rotationInputMessage);
+	_movementInputMessage->m_mouseWorldPosX = worldMousePosition.x;
+	_movementInputMessage->m_mouseWorldPosY = worldMousePosition.y;
 
 	sf::Vector2f shipPosition = m_sprite->getPosition();
 
@@ -95,8 +97,11 @@ void Player::UpdateRotation(const float _dt, const sf::RenderWindow& _window)
 	m_sprite->setRotation(sf::degrees(angleDegrees));
 }
 
-void Player::Move(const float _dt)
+void Player::Move(std::shared_ptr<engine::MovementInputMessage> _movementInputMessage, const float _dt)
 {
+	_movementInputMessage->m_moveDirectionX = m_moveDirection.x;
+	_movementInputMessage->m_moveDirectionY = m_moveDirection.y;
+
 	float rotation = m_sprite->getRotation().asRadians();
 	sf::Vector2f forwardDirection(std::cos(rotation), std::sin(rotation));
 	sf::Vector2f rightDirection(-std::sin(rotation), std::cos(rotation));

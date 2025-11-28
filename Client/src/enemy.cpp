@@ -15,7 +15,23 @@ void EnemyManager::UpdateEnemis()
 	CheckNewEnemy();
 	CheckDisconnectedEnemy();
 
-	UpdateEnemyRotation();
+	auto rotationAndPositionUpdates = client::Client::Get()->getTcpMessages("UpdateRotationAndPositionMessage");
+	for (auto rotationAndPositionUpdate : rotationAndPositionUpdates.second)
+	{
+		auto castedMessage = std::static_pointer_cast<engine::UpdateRotationAndPositionMessage>(rotationAndPositionUpdate);
+
+		int id = castedMessage->m_id;
+		float rotation = castedMessage->m_rotation;
+		float positionX = castedMessage->m_positionX;
+		float positionY = castedMessage->m_positionY;
+
+		auto it = m_enemies.find(id);
+		if (it != m_enemies.end())
+		{
+			it->second.m_sprite->setRotation(sf::degrees(rotation));
+			it->second.m_sprite->setPosition(sf::Vector2f(positionX, positionY));
+		}
+	}
 }
 
 void EnemyManager::DrawEnemis(sf::RenderWindow& window)
@@ -53,21 +69,5 @@ void EnemyManager::CheckDisconnectedEnemy()
 		auto castedMessage = std::static_pointer_cast<engine::DisconnectedClientMessage>(disconnectedEnemy);
 		int id = castedMessage->m_id;
 		m_enemies.erase(id);
-	}
-}
-
-void EnemyManager::UpdateEnemyRotation()
-{
-	auto rotationUpdates = client::Client::Get()->getTcpMessages("UpdateRotationMessage");
-	for (auto rotationUpdate : rotationUpdates.second)
-	{
-		auto castedMessage = std::static_pointer_cast<engine::UpdateRotationMessage>(rotationUpdate);
-		int id = castedMessage->m_id;
-		float rotation = castedMessage->m_rotation;
-		auto it = m_enemies.find(id);
-		if (it != m_enemies.end())
-		{
-			it->second.m_sprite->setRotation(sf::degrees(rotation));
-		}
 	}
 }

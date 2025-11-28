@@ -3,6 +3,8 @@
 
 #include <SFML/Graphics.hpp>
 
+#include "gameMessage.hpp"
+
 class Player
 {
 public:
@@ -21,8 +23,8 @@ private:
 
 	sf::Vector2i m_moveDirection;
 
-	void UpdateRotation(const float _dt, const sf::RenderWindow& _window);
-	void Move(const float _dt);
+	void UpdateRotation(std::shared_ptr<engine::MovementInputMessage> _movementInputMessage, const float _dt, const sf::RenderWindow& _window);
+	void Move(std::shared_ptr<engine::MovementInputMessage> _movementInputMessage, const float _dt);
 };
 
 #endif
