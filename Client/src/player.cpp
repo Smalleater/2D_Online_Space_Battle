@@ -41,14 +41,6 @@ void Player::PollEvents(const std::optional<sf::Event>& _event, const float _dt)
 		{
 			m_moveDirection.y = m_moveDirection.y == 0 ? 1 : 0;
 		}
-		if (keyPressed->scancode == sf::Keyboard::Scancode::A)
-		{
-			m_moveDirection.x = m_moveDirection.x == 0 ? -1 : 0;
-		}
-		if (keyPressed->scancode == sf::Keyboard::Scancode::D)
-		{
-			m_moveDirection.x = m_moveDirection.x == 0 ? 1 : 0;
-		}
 	}
 
 	if (const auto* keyReleased = _event->getIf<sf::Event::KeyReleased>())
@@ -56,10 +48,6 @@ void Player::PollEvents(const std::optional<sf::Event>& _event, const float _dt)
 		if (keyReleased->scancode == sf::Keyboard::Scancode::W || keyReleased->scancode == sf::Keyboard::Scancode::S)
 		{
 			m_moveDirection.y = 0;
-		}
-		if (keyReleased->scancode == sf::Keyboard::Scancode::A || keyReleased->scancode == sf::Keyboard::Scancode::D)
-		{
-			m_moveDirection.x = 0;
 		}
 	}
 }
@@ -91,10 +79,9 @@ void Player::UpdateRotation(std::shared_ptr<engine::MovementInputMessage> _movem
 
 	float deltaX = worldMousePosition.x - shipPosition.x;
 	float deltaY = worldMousePosition.y - shipPosition.y;
-	float angleRadians = std::atan2(deltaY, deltaX);
-	float angleDegrees = angleRadians * 180.0f / static_cast<float>(M_PI) + 90.0f;
+	float angleRadians = std::atan2(deltaY, deltaX) + +90.0f * (static_cast<float>(M_PI) / 180.0f);
 
-	m_sprite->setRotation(sf::degrees(angleDegrees));
+	m_sprite->setRotation(sf::radians(angleRadians));
 }
 
 void Player::Move(std::shared_ptr<engine::MovementInputMessage> _movementInputMessage, const float _dt)

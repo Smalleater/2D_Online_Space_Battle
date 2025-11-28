@@ -28,7 +28,7 @@ void EnemyManager::UpdateEnemis()
 		auto it = m_enemies.find(id);
 		if (it != m_enemies.end())
 		{
-			it->second.m_sprite->setRotation(sf::degrees(rotation));
+			it->second.m_sprite->setRotation(sf::radians(rotation));
 			it->second.m_sprite->setPosition(sf::Vector2f(positionX, positionY));
 		}
 	}

@@ -137,21 +137,19 @@ void PlayerManager::updatePlayerRotation(const float _mouseWorldPosX, const floa
 {
 	float deltaX = _mouseWorldPosX - _it->m_position.x;
 	float deltaY = _mouseWorldPosY - _it->m_position.y;
-	float angleRadians = std::atan2(deltaY, deltaX);
-	float angleDegrees = angleRadians * 180.0f / static_cast<float>(M_PI) + 90.0f;
-	_it->m_rotation = angleDegrees;
+	float angleRadians = std::atan2(deltaY, deltaX) + 90.0f * (static_cast<float>(M_PI) / 180.0f);
+	_it->m_rotation = angleRadians;
 }
 
 void PlayerManager::updatePlayerMovement(const int _moveDirectionX, const int _moveDirectionY, std::vector<Player>::iterator& _it, const float deltaTime)
 {
-	float rotation = _it->m_rotation * static_cast<float>(M_PI) / 180.0f;
+	float rotation = _it->m_rotation;
 
 	Vector2f forwardDirection(std::cos(rotation), std::sin(rotation));
 	Vector2f rightDirection(-std::sin(rotation), std::cos(rotation));
 
 	Vector2f movement(0.0f, 0.0f);
 	movement += forwardDirection * static_cast<float>(_moveDirectionX) * MoveSpeed * deltaTime;
-	movement += rightDirection * static_cast<float>(_moveDirectionY) * MoveSpeed * deltaTime;
 
 	_it->m_position += movement;
 
