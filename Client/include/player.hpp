@@ -23,6 +23,8 @@ private:
 
 	sf::Vector2i m_moveDirection;
 
+	bool m_isShooting = false;
+
 	void UpdateRotation(std::shared_ptr<engine::MovementInputMessage> _movementInputMessage, const float _dt, const sf::RenderWindow& _window);
 	void Move(std::shared_ptr<engine::MovementInputMessage> _movementInputMessage, const float _dt);
 };

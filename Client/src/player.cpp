@@ -50,6 +50,22 @@ void Player::PollEvents(const std::optional<sf::Event>& _event, const float _dt)
 			m_moveDirection.y = 0;
 		}
 	}
+
+	if (const auto* mouseButtonPressed = _event->getIf<sf::Event::MouseButtonPressed>())
+	{
+		if (mouseButtonPressed->button == sf::Mouse::Button::Left)
+		{
+			m_isShooting = true;
+		}
+	}
+
+	if (const auto* mouseButtonReleased = _event->getIf<sf::Event::MouseButtonReleased>())
+	{
+		if (mouseButtonReleased->button == sf::Mouse::Button::Left)
+		{
+			m_isShooting = false;
+		}
+	}
 }
 
 void Player::Update(const float _dt, const sf::RenderWindow& _window)
@@ -60,6 +76,12 @@ void Player::Update(const float _dt, const sf::RenderWindow& _window)
 	Move(movementInputMessage, _dt);
 
 	client::Client::Get()->sendTcpMessage(movementInputMessage);
+
+	if (m_isShooting)
+	{
+		std::shared_ptr<engine::ShootInputMessage> playerShootMessage = std::make_shared<engine::ShootInputMessage>();
+		client::Client::Get()->sendTcpMessage(playerShootMessage);
+	}
 }
 
 void Player::Draw(sf::RenderWindow& _window)
