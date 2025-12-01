@@ -150,6 +150,7 @@ void PlayerManager::updatePlayerMovement(const int _moveDirectionX, const int _m
 
 	Vector2f movement(0.0f, 0.0f);
 	movement += forwardDirection * static_cast<float>(_moveDirectionX) * MoveSpeed * deltaTime;
+	movement += rightDirection * static_cast<float>(_moveDirectionY) * MoveSpeed * deltaTime;
 
 	_it->m_position += movement;
 
