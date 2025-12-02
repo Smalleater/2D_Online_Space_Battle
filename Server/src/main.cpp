@@ -2,11 +2,11 @@
 #include <chrono>
 #include <thread>
 
-#include "TME/server/server.hpp"
+#include "TRA/server/server.hpp"
 
 #include "player.hpp"
 
-using namespace tme;
+using namespace tra;
 
 int main()
 {

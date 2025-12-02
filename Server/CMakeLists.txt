@@ -17,6 +17,6 @@ target_include_directories(2D_Online_Space_Battle_Server
 		${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(2D_Online_Space_Battle_Server PUBLIC ${COMMON_LIB_DIR}/tme_core.lib)
-target_link_libraries(2D_Online_Space_Battle_Server PUBLIC ${COMMON_LIB_DIR}/tme_engine.lib)
-target_link_libraries(2D_Online_Space_Battle_Server PUBLIC ${COMMON_LIB_DIR}/tme_server.lib)
+target_link_libraries(2D_Online_Space_Battle_Server PUBLIC ${COMMON_LIB_DIR}/tra_core.lib)
+target_link_libraries(2D_Online_Space_Battle_Server PUBLIC ${COMMON_LIB_DIR}/tra_engine.lib)
+target_link_libraries(2D_Online_Space_Battle_Server PUBLIC ${COMMON_LIB_DIR}/tra_server.lib)

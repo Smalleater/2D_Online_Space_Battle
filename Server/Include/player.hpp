@@ -1,13 +1,13 @@
 #ifndef PLAYER_HPP
 #define PLAYER_HPP
 
-#include "TME/server/server.hpp"
+#include "TRA/server/server.hpp"
 
 #include "vector.hpp"
 
 struct Player
 {
-	tme::engine::EntityId m_id;
+	tra::engine::EntityId m_id;
 	Vector2f m_position;
 	float m_rotation = 0;
 };

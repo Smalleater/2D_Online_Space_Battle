@@ -22,11 +22,12 @@ private:
 	sf::Sprite* m_sprite;
 
 	sf::Vector2i m_moveDirection;
+	sf::Vector2f m_lastWorldMousePosition;
 
 	bool m_isShooting = false;
 
-	void UpdateRotation(std::shared_ptr<engine::MovementInputMessage> _movementInputMessage, const float _dt, const sf::RenderWindow& _window);
-	void Move(std::shared_ptr<engine::MovementInputMessage> _movementInputMessage, const float _dt);
+	void UpdateRotation(std::shared_ptr<tra::engine::MovementInputMessage> _movementInputMessage, const float _dt, const sf::RenderWindow& _window);
+	void Move(std::shared_ptr<tra::engine::MovementInputMessage> _movementInputMessage, const float _dt);
 };
 
 #endif

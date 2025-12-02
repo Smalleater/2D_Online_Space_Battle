@@ -1,11 +1,11 @@
 #include <SFML/Graphics.hpp>
 
-#include "TME/client/client.hpp"
+#include "TRA/client/client.hpp"
 
 #include "player.hpp"
 #include "enemy.hpp"
 
-using namespace tme;
+using namespace tra;
 
 int main()
 {

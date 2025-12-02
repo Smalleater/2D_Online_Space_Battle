@@ -1,9 +1,7 @@
 #ifndef GAME_MESSAGE_HPP
 #define GAME_MESSAGE_HPP
 
-#include "TME/engine/message.hpp"
-
-using namespace tme;
+#include "TRA/engine/message.hpp"
 
 DECLARE_MESSAGE_BEGIN(NewClientMessage)
 FIELD(int, m_id)

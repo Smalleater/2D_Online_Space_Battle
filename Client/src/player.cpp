@@ -3,15 +3,16 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-#include "TME/client/client.hpp"
+#include "TRA/client/client.hpp"
 #include "gameMessage.hpp"
 
 #define SPRITE_LOAD_PATH "resources/sprites/ship.png"
 
-constexpr const float MoveSpeed = 200.0f;
-constexpr const float WorldSize = 800.0f;
+constexpr float MOVE_SPEED = 200.0f;
+constexpr float WORLD_SIZE = 800.0f;
+constexpr float MOUSE_DEAD_ZONE = 5.0f;
 
-using namespace tme;
+using namespace tra;
 
 Player::Player()
 {
@@ -37,15 +38,11 @@ void Player::PollEvents(const std::optional<sf::Event>& _event, const float _dt)
 		{
 			m_moveDirection.y = m_moveDirection.y == 0 ? -1 : 0;
 		}
-		if (keyPressed->scancode == sf::Keyboard::Scancode::S)
-		{
-			m_moveDirection.y = m_moveDirection.y == 0 ? 1 : 0;
-		}
 	}
 
 	if (const auto* keyReleased = _event->getIf<sf::Event::KeyReleased>())
 	{
-		if (keyReleased->scancode == sf::Keyboard::Scancode::W || keyReleased->scancode == sf::Keyboard::Scancode::S)
+		if (keyReleased->scancode == sf::Keyboard::Scancode::W)
 		{
 			m_moveDirection.y = 0;
 		}
@@ -93,6 +90,7 @@ void Player::UpdateRotation(std::shared_ptr<engine::MovementInputMessage> _movem
 {
 	sf::Vector2i mousePosition = sf::Mouse::getPosition(_window);
 	sf::Vector2f worldMousePosition = _window.mapPixelToCoords(mousePosition);
+	m_lastWorldMousePosition = worldMousePosition;
 
 	_movementInputMessage->m_mouseWorldPosX = worldMousePosition.x;
 	_movementInputMessage->m_mouseWorldPosY = worldMousePosition.y;
@@ -116,28 +114,39 @@ void Player::Move(std::shared_ptr<engine::MovementInputMessage> _movementInputMe
 	sf::Vector2f rightDirection(-std::sin(rotation), std::cos(rotation));
 
 	sf::Vector2f movement(0.0f, 0.0f);
-	movement += forwardDirection * static_cast<float>(m_moveDirection.x) * MoveSpeed * _dt;
-	movement += rightDirection * static_cast<float>(m_moveDirection.y) * MoveSpeed * _dt;
+	movement += forwardDirection * static_cast<float>(m_moveDirection.x) * MOVE_SPEED * _dt;
+	movement += rightDirection * static_cast<float>(m_moveDirection.y) * MOVE_SPEED * _dt;
 
 	m_sprite->move(movement);
+
+	float shipToMouseDistance = std::sqrt((m_lastWorldMousePosition.x - m_sprite->getPosition().x) 
+		* (m_lastWorldMousePosition.x - m_sprite->getPosition().x) 
+		+ (m_lastWorldMousePosition.y - m_sprite->getPosition().y) 
+		* (m_lastWorldMousePosition.y - m_sprite->getPosition().y));
+
+	if (shipToMouseDistance < MOUSE_DEAD_ZONE)
+	{
+		m_sprite->move(-movement);
+		return;
+	}
 
 	sf::Vector2f position = m_sprite->getPosition();
 	if (position.x < 0.0f)
 	{
-		position.x += WorldSize;
+		position.x += WORLD_SIZE;
 	}	
-	else if (position.x >= WorldSize)
+	else if (position.x >= WORLD_SIZE)
 	{
-		position.x -= WorldSize;
+		position.x -= WORLD_SIZE;
 	}
 
 	if (position.y < 0.0f)
 	{
-		position.y += WorldSize;
+		position.y += WORLD_SIZE;
 	}	
-	else if (position.y >= WorldSize)
+	else if (position.y >= WORLD_SIZE)
 	{
-		position.y -= WorldSize;
+		position.y -= WORLD_SIZE;
 	}
 
 	m_sprite->setPosition(position);

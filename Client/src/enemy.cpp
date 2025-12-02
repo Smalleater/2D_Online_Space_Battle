@@ -1,12 +1,12 @@
 #include "enemy.hpp"
 
-#include "TME/client/client.hpp"
-#include "TME/engine/message.hpp"
+#include "TRA/client/client.hpp"
+#include "TRA/engine/message.hpp"
 #include "gameMessage.hpp"
 
 #define SPRITE_LOAD_PATH "resources/sprites/enemy.png"
 
-using namespace tme;
+using namespace tra;
 
 std::map<int, Enemy> EnemyManager::m_enemies;
 

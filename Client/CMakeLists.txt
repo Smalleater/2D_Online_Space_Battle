@@ -26,9 +26,9 @@ target_include_directories(2D_Online_Space_Battle_Client
 		${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(2D_Online_Space_Battle_Client PUBLIC ${COMMON_LIB_DIR}/tme_core.lib)
-target_link_libraries(2D_Online_Space_Battle_Client PUBLIC ${COMMON_LIB_DIR}/tme_engine.lib)
-target_link_libraries(2D_Online_Space_Battle_Client PUBLIC ${COMMON_LIB_DIR}/tme_client.lib)
+target_link_libraries(2D_Online_Space_Battle_Client PUBLIC ${COMMON_LIB_DIR}/tra_core.lib)
+target_link_libraries(2D_Online_Space_Battle_Client PUBLIC ${COMMON_LIB_DIR}/tra_engine.lib)
+target_link_libraries(2D_Online_Space_Battle_Client PUBLIC ${COMMON_LIB_DIR}/tra_client.lib)
 
 target_compile_features(2D_Online_Space_Battle_Client PRIVATE cxx_std_17)
 target_link_libraries(2D_Online_Space_Battle_Client PRIVATE SFML::Graphics)

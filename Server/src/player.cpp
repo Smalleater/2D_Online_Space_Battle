@@ -3,22 +3,51 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-#include "TME/engine/newConnectionComponent.hpp"
-#include "TME/engine/networkRootComponentTag.hpp"
-#include "TME/engine/connectionStatusComponent.hpp"
-#include "TME/engine/disconnectedComponent.hpp"
+#include "TRA/engine/newConnectionComponent.hpp"
+#include "TRA/engine/networkRootComponentTag.hpp"
+#include "TRA/engine/connectionStatusComponent.hpp"
+#include "TRA/engine/disconnectedComponent.hpp"
 
 #include "gameMessage.hpp"
-#include "projectile.hpp"
 
 constexpr float MoveSpeed = 200.0f;
 constexpr float WorldSize = 800.0f;
 
-using namespace tme;
+using namespace tra;
 
 std::vector<Player> PlayerManager::m_players;
 
 void PlayerManager::removeDisconnectedPlayers()
+{
+	std::vector<engine::EntityId> disconnectedClients = server::Server::Get()->queryEntityIds<engine::DisconnectedComponentTag>();
+	for (size_t i = 0; i < disconnectedClients.size(); i++)
+	{
+		auto it = std::find_if(m_players.begin(), m_players.end(),
+			[disconnectedClients, i](const Player& player)
+			{
+				return player.m_id == disconnectedClients[i];
+			});
+
+		if (it == m_players.end())
+		{
+			continue;
+		}
+
+		std::vector<engine::EntityId> playersId = server::Server::Get()->queryEntityIds<engine::NetworkRootComponentTag, engine::ConnectedComponentTag>();
+		std::shared_ptr<engine::DisconnectedClientMessage> disconnectMessage = nullptr;
+		for (size_t y = 0; y < playersId.size(); y++)
+		{
+			if (playersId[y] == it->m_id) continue;
+			disconnectMessage = std::make_shared<engine::DisconnectedClientMessage>();
+			disconnectMessage->m_id = it->m_id;
+			server::Server::Get()->sendTcpMessage(playersId[y], disconnectMessage);
+		}
+
+		m_players.erase(it);
+	}
+}
+
+void PlayerManager::addNewPlayers()
 {
 	engine::EntityId selfEntityId = server::Server::Get()->getSelfEntityId();
 
@@ -50,36 +79,6 @@ void PlayerManager::removeDisconnectedPlayers()
 
 			server::Server::Get()->sendTcpMessage(newConections[i], newClientMessage);
 		}
-	}
-}
-
-void PlayerManager::addNewPlayers()
-{
-	std::vector<engine::EntityId> disconnectedClients = server::Server::Get()->queryEntityIds<engine::DisconnectedComponentTag>();
-	for (size_t i = 0; i < disconnectedClients.size(); i++)
-	{
-		auto it = std::find_if(m_players.begin(), m_players.end(),
-			[disconnectedClients, i](const Player& player)
-			{
-				return player.m_id == disconnectedClients[i];
-			});
-
-		if (it == m_players.end())
-		{
-			continue;
-		}
-
-		std::vector<engine::EntityId> playersId = server::Server::Get()->queryEntityIds<engine::NetworkRootComponentTag, engine::ConnectedComponentTag>();
-		std::shared_ptr<engine::DisconnectedClientMessage> disconnectMessage = nullptr;
-		for (size_t y = 0; y < playersId.size(); y++)
-		{
-			if (playersId[y] == it->m_id) continue;
-			disconnectMessage = std::make_shared<engine::DisconnectedClientMessage>();
-			disconnectMessage->m_id = it->m_id;
-			server::Server::Get()->sendTcpMessage(playersId[y], disconnectMessage);
-		}
-
-		m_players.erase(it);
 	}
 }
 
@@ -132,7 +131,6 @@ void PlayerManager::updatePlayers(float deltaTime)
 		if (messagesResult.second.size() != 0)
 		{
 			Vector2f direction(std::cos(it->m_rotation), std::sin(it->m_rotation));
-			ProjectileManager::AddProjectile(it->m_position, direction, playersId[i]);
 		}
 	}
 }
