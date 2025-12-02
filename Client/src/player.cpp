@@ -63,6 +63,19 @@ void Player::PollEvents(const std::optional<sf::Event>& _event, const float _dt)
 			m_isShooting = false;
 		}
 	}
+
+	if (const auto* focusLost = _event->getIf<sf::Event::FocusLost>())
+	{
+		m_isNotFocused = true;
+
+		m_moveDirection = sf::Vector2i(0, 0);
+		m_isShooting = false;
+	}
+
+	if (const auto* focusGained = _event->getIf<sf::Event::FocusGained>())
+	{
+		m_isNotFocused = false;
+	}
 }
 
 void Player::Update(const float _dt, const sf::RenderWindow& _window)
@@ -88,6 +101,13 @@ void Player::Draw(sf::RenderWindow& _window)
 
 void Player::UpdateRotation(std::shared_ptr<engine::MovementInputMessage> _movementInputMessage, const float _dt, const sf::RenderWindow& _window)
 {
+	if (m_isNotFocused)
+	{
+		_movementInputMessage->m_mouseWorldPosX = m_lastWorldMousePosition.x;
+		_movementInputMessage->m_mouseWorldPosY = m_lastWorldMousePosition.y;
+		return;
+	}
+
 	sf::Vector2i mousePosition = sf::Mouse::getPosition(_window);
 	sf::Vector2f worldMousePosition = _window.mapPixelToCoords(mousePosition);
 	m_lastWorldMousePosition = worldMousePosition;
@@ -99,7 +119,7 @@ void Player::UpdateRotation(std::shared_ptr<engine::MovementInputMessage> _movem
 
 	float deltaX = worldMousePosition.x - shipPosition.x;
 	float deltaY = worldMousePosition.y - shipPosition.y;
-	float angleRadians = std::atan2(deltaY, deltaX) + +90.0f * (static_cast<float>(M_PI) / 180.0f);
+	float angleRadians = std::atan2(deltaY, deltaX) + 90.0f * (static_cast<float>(M_PI) / 180.0f);
 
 	m_sprite->setRotation(sf::radians(angleRadians));
 }

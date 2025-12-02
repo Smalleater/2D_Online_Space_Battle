@@ -24,6 +24,7 @@ private:
 	sf::Vector2i m_moveDirection;
 	sf::Vector2f m_lastWorldMousePosition;
 
+	bool m_isNotFocused = false;
 	bool m_isShooting = false;
 
 	void UpdateRotation(std::shared_ptr<tra::engine::MovementInputMessage> _movementInputMessage, const float _dt, const sf::RenderWindow& _window);

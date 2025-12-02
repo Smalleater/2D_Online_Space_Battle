@@ -10,8 +10,9 @@
 
 #include "gameMessage.hpp"
 
-constexpr float MoveSpeed = 200.0f;
-constexpr float WorldSize = 800.0f;
+constexpr float MOVE_SPEED = 200.0f;
+constexpr float WORLD_SIZE = 800.0f;
+constexpr float MOUSE_DEAD_ZONE = 5.0f;
 
 using namespace tra;
 
@@ -137,6 +138,8 @@ void PlayerManager::updatePlayers(float deltaTime)
 
 void PlayerManager::updatePlayerRotation(const float _mouseWorldPosX, const float _mouseWorldPosY, std::vector<Player>::iterator& _it)
 {
+	_it->m_lastMousePosition = Vector2f(_mouseWorldPosX, _mouseWorldPosY);
+
 	float deltaX = _mouseWorldPosX - _it->m_position.x;
 	float deltaY = _mouseWorldPosY - _it->m_position.y;
 	float angleRadians = std::atan2(deltaY, deltaX) + 90.0f * (static_cast<float>(M_PI) / 180.0f);
@@ -151,26 +154,37 @@ void PlayerManager::updatePlayerMovement(const int _moveDirectionX, const int _m
 	Vector2f rightDirection(-std::sin(rotation), std::cos(rotation));
 
 	Vector2f movement(0.0f, 0.0f);
-	movement += forwardDirection * static_cast<float>(_moveDirectionX) * MoveSpeed * deltaTime;
-	movement += rightDirection * static_cast<float>(_moveDirectionY) * MoveSpeed * deltaTime;
+	movement += forwardDirection * static_cast<float>(_moveDirectionX) * MOVE_SPEED * deltaTime;
+	movement += rightDirection * static_cast<float>(_moveDirectionY) * MOVE_SPEED * deltaTime;
 
 	_it->m_position += movement;
 
+	float shipToMouseDistance = std::sqrt((_it->m_lastMousePosition.x - _it->m_position.x)
+		* (_it->m_lastMousePosition.x - _it->m_position.x)
+		+ (_it->m_lastMousePosition.y - _it->m_position.y)
+		* (_it->m_lastMousePosition.y - _it->m_position.y));
+
+	if (shipToMouseDistance < MOUSE_DEAD_ZONE)
+	{
+		_it->m_position -= movement;
+		return;
+	}
+
 	if (_it->m_position.x < 0.0f)
 	{
-		_it->m_position.x += WorldSize;
+		_it->m_position.x += WORLD_SIZE;
 	}
-	else if (_it->m_position.x >= WorldSize)
+	else if (_it->m_position.x >= WORLD_SIZE)
 	{
-		_it->m_position.x -= WorldSize;
+		_it->m_position.x -= WORLD_SIZE;
 	}
 
 	if (_it->m_position.y < 0.0f)
 	{
-		_it->m_position.y += WorldSize;
+		_it->m_position.y += WORLD_SIZE;
 	}
-	else if (_it->m_position.y >= WorldSize)
+	else if (_it->m_position.y >= WORLD_SIZE)
 	{
-		_it->m_position.y -= WorldSize;
+		_it->m_position.y -= WORLD_SIZE;
 	}
 }
