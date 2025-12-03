@@ -16,6 +16,18 @@ using namespace tra;
 
 void ProjectileManager::UpdateProjectiles(const float deltaTime)
 {
+	auto newProjectileMessages = client::Client::Get()->getTcpMessages("NewProjectileMessage");
+	for (auto newProjectileMessage : newProjectileMessages.second)
+	{
+		auto castedMessage = std::static_pointer_cast<engine::NewProjectileMessage>(newProjectileMessage);
+		float positionX = castedMessage->m_positionX;
+		float positionY = castedMessage->m_positionY;
+		float directionX = castedMessage->m_directionX;
+		float directionY = castedMessage->m_directionY;
+
+		CreateProjectile(castedMessage->m_projectileId, sf::Vector2f(positionX, positionY), sf::Vector2f(directionX, directionY));
+	}
+
 	auto removeProjectileMessages = client::Client::Get()->getTcpMessages("DeleteProjectileMessage");
 	for (auto removeProjectileMessage : removeProjectileMessages.second)
 	{
@@ -29,18 +41,6 @@ void ProjectileManager::UpdateProjectiles(const float deltaTime)
 				break;
 			}
 		}
-	}
-
-	auto newProjectileMessages = client::Client::Get()->getTcpMessages("NewProjectileMessage");
-	for (auto newProjectileMessage : newProjectileMessages.second)
-	{
-		auto castedMessage = std::static_pointer_cast<engine::NewProjectileMessage>(newProjectileMessage);
-		float positionX = castedMessage->m_positionX;
-		float positionY = castedMessage->m_positionY;
-		float directionX = castedMessage->m_directionX;
-		float directionY = castedMessage->m_directionY;
-
-		CreateProjectile(castedMessage->m_projectileId, sf::Vector2f(positionX, positionY), sf::Vector2f(directionX, directionY));
 	}
 
 	auto updateProjectilePositionMessages = client::Client::Get()->getTcpMessages("UpdateProjectilePositionMessage");
