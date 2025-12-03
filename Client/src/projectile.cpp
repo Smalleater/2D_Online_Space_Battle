@@ -8,7 +8,7 @@
 
 
 sf::Texture* ProjectileManager::m_texture = nullptr;
-std::vector<Projectile> ProjectileManager::m_projectiles;
+std::vector<std::pair<int, Projectile>> ProjectileManager::m_projectiles;
 
 using namespace tra;
 
@@ -23,19 +23,37 @@ void ProjectileManager::UpdateProjectiles(const float deltaTime)
 		float directionX = castedMessage->m_directionX;
 		float directionY = castedMessage->m_directionY;
 
-		CreateProjectile(sf::Vector2f(positionX, positionY), sf::Vector2f(directionX, directionY));
+		CreateProjectile(castedMessage->m_projectileId, sf::Vector2f(positionX, positionY), sf::Vector2f(directionX, directionY));
+	}
+
+	auto updateProjectilePositionMessages = client::Client::Get()->getTcpMessages("UpdateProjectilePositionMessage");
+	for (auto updateProjectilePositionMessage : updateProjectilePositionMessages.second)
+	{
+		auto castedMessage = std::static_pointer_cast<engine::UpdateProjectilePositionMessage>(updateProjectilePositionMessage);
+		int projectileId = castedMessage->m_projectileId;
+		float positionX = castedMessage->m_positionX;
+		float positionY = castedMessage->m_positionY;
+
+		for (auto& [id, projectile] : m_projectiles)
+		{
+			if (id == projectileId)
+			{
+				projectile.m_sprite.setPosition(sf::Vector2f(positionX, positionY));
+				break;
+			}
+		}
 	}
 }
 
 void ProjectileManager::DrawProjectiles(sf::RenderWindow& window)
 {
-	for (auto& projectile : m_projectiles)
+	for (auto& [id, projectile] : m_projectiles)
 	{
 		window.draw(projectile.m_sprite);
 	}
 }
 
-void ProjectileManager::CreateProjectile(const sf::Vector2f& position, const sf::Vector2f& direction)
+void ProjectileManager::CreateProjectile(const uint32_t _id, const sf::Vector2f& position, const sf::Vector2f& direction)
 {
 	if (m_texture == nullptr)
 	{
@@ -53,5 +71,5 @@ void ProjectileManager::CreateProjectile(const sf::Vector2f& position, const sf:
 	float angle = std::atan2(direction.y, direction.x);
 	sprite.setRotation(sf::radians(angle));
 
-	m_projectiles.emplace_back(sprite);
+	m_projectiles.emplace_back(_id, Projectile(sprite));
 }

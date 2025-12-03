@@ -5,6 +5,7 @@
 #include <TRA/server/server.hpp>
 
 #include "player.hpp"
+#include "projectile.hpp"
 
 using namespace tra;
 
@@ -37,6 +38,7 @@ int main()
 		PlayerManager::addNewPlayers();
 
 		PlayerManager::updatePlayers(deltaTime);
+		ProjectileManager::updateProjectiles(deltaTime);
 
 		server::Server::Get()->endUpdate();
 

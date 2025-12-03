@@ -6,6 +6,8 @@
 
 #include "gameMessage.hpp"
 
+constexpr float WORLD_SIZE = 800.0f;
+
 std::vector<Projectile> ProjectileManager::m_projectiles;
 uint32_t ProjectileManager::m_nextProjectileId = 0;
 
@@ -30,5 +32,46 @@ void ProjectileManager::createProjectile(const Vector2f& position, const Vector2
 	for (size_t i = 0; i < playersId.size(); i++)
 	{
 		server::Server::Get()->sendTcpMessage(playersId[i], msg);
+	}
+}
+
+void ProjectileManager::updateProjectiles(const float deltaTime)
+{
+	std::shared_ptr<engine::UpdateProjectilePositionMessage> updateProjectilePositionMessage = nullptr;
+	std::vector<engine::EntityId> playersId = server::Server::Get()->queryEntityIds<engine::NetworkRootComponentTag, engine::ConnectedComponentTag>();
+
+	const float speed = 300.0f;
+	for (size_t i = 0; i < m_projectiles.size(); i++)
+	{
+		m_projectiles[i].m_position.x += m_projectiles[i].m_direction.x * speed * deltaTime;
+		m_projectiles[i].m_position.y += m_projectiles[i].m_direction.y * speed * deltaTime;
+
+		if (m_projectiles[i].m_position.x < 0.0f)
+		{
+			m_projectiles[i].m_position.x += WORLD_SIZE;
+		}
+		else if (m_projectiles[i].m_position.x >= WORLD_SIZE)
+		{
+			m_projectiles[i].m_position.x -= WORLD_SIZE;
+		}
+
+		if (m_projectiles[i].m_position.y < 0.0f)
+		{
+			m_projectiles[i].m_position.y += WORLD_SIZE;
+		}
+		else if (m_projectiles[i].m_position.y >= WORLD_SIZE)
+		{
+			m_projectiles[i].m_position.y -= WORLD_SIZE;
+		}
+
+		updateProjectilePositionMessage = std::make_shared<engine::UpdateProjectilePositionMessage>();
+		updateProjectilePositionMessage->m_projectileId = m_projectiles[i].m_id;
+		updateProjectilePositionMessage->m_positionX = m_projectiles[i].m_position.x;
+		updateProjectilePositionMessage->m_positionY = m_projectiles[i].m_position.y;
+
+		for (size_t j = 0; j < playersId.size(); j++)
+		{
+			server::Server::Get()->sendTcpMessage(playersId[j], updateProjectilePositionMessage);
+		}
 	}
 }

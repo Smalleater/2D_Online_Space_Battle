@@ -36,4 +36,10 @@ FIELD(float, m_directionX)
 FIELD(float, m_directionY)
 DECLARE_MESSAGE_END()
 
+DECLARE_MESSAGE_BEGIN(UpdateProjectilePositionMessage)
+FIELD(int, m_projectileId)
+FIELD(float, m_positionX)
+FIELD(float, m_positionY)
+DECLARE_MESSAGE_END()
+
 #endif

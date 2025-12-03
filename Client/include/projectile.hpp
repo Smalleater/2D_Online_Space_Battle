@@ -18,9 +18,9 @@ public:
 
 private:
 	static sf::Texture* m_texture;
-	static std::vector<Projectile> m_projectiles;
+	static std::vector<std::pair<int, Projectile>> m_projectiles;
 
-	static void CreateProjectile(const sf::Vector2f& position, const sf::Vector2f& direction);
+	static void CreateProjectile(const uint32_t _id, const sf::Vector2f& position, const sf::Vector2f& direction);
 };
 
 #endif
