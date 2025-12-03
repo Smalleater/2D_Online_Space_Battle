@@ -61,6 +61,9 @@ void PlayerManager::addNewPlayers()
 		Player newPlayer;
 		newPlayer.m_id = newConections[i];
 		newPlayer.m_position = getRespawnPosition();
+		newPlayer.m_lastMousePosition = Vector2f(0, 0);
+		newPlayer.m_rotation = 0.0f;
+		newPlayer.m_shootCooldown = 0.0f;
 		m_players.push_back(newPlayer);
 
 		std::shared_ptr<engine::RespawnMessage> respawnMessage = std::make_shared<engine::RespawnMessage>();

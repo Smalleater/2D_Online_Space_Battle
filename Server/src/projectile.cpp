@@ -54,7 +54,6 @@ void ProjectileManager::updateProjectiles(const float deltaTime)
 		{
 			removeProjectile(i);
 			i--;
-
 			continue;
 		}
 
@@ -62,29 +61,18 @@ void ProjectileManager::updateProjectiles(const float deltaTime)
 		{
 			removeProjectile(i);
 			i--;
-
 			continue;
 		}
 
 		m_projectiles[i].m_position.x += m_projectiles[i].m_direction.x * PROJECTILE_SPEED * deltaTime;
 		m_projectiles[i].m_position.y += m_projectiles[i].m_direction.y * PROJECTILE_SPEED * deltaTime;
 
-		if (m_projectiles[i].m_position.x < 0.0f)
+		if (m_projectiles[i].m_position.x < 0.0f || m_projectiles[i].m_position.x >= WORLD_SIZE
+			|| m_projectiles[i].m_position.y < 0.0f || m_projectiles[i].m_position.y >= WORLD_SIZE)
 		{
-			m_projectiles[i].m_position.x += WORLD_SIZE;
-		}
-		else if (m_projectiles[i].m_position.x >= WORLD_SIZE)
-		{
-			m_projectiles[i].m_position.x -= WORLD_SIZE;
-		}
-
-		if (m_projectiles[i].m_position.y < 0.0f)
-		{
-			m_projectiles[i].m_position.y += WORLD_SIZE;
-		}
-		else if (m_projectiles[i].m_position.y >= WORLD_SIZE)
-		{
-			m_projectiles[i].m_position.y -= WORLD_SIZE;
+			removeProjectile(i);
+			i--;
+			continue;
 		}
 
 		updateProjectilePositionMessage = std::make_shared<engine::UpdateProjectilePositionMessage>();
