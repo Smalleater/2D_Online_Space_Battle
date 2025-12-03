@@ -115,6 +115,25 @@ void ProjectileManager::removeProjectile(size_t _index)
 
 bool ProjectileManager::checkCollision(const Projectile& _projectil)
 {
+	for (auto& projectile : m_projectiles)
+	{
+		if (projectile.m_id == _projectil.m_id)
+		{
+			continue;
+		}
+
+		float dx = _projectil.m_position.x - projectile.m_position.x;
+		float dy = _projectil.m_position.y - projectile.m_position.y;
+
+		float distanceSquared = dx * dx + dy * dy;
+		float radiusSum = PROJECTILE_RADIUS + PROJECTILE_RADIUS;
+
+		if (distanceSquared <= radiusSum * radiusSum)
+		{
+			return true;
+		}
+	}
+
 	for (auto& player : PlayerManager::getPlayers())
 	{
 		if (player.m_id == _projectil.m_shooterId)
