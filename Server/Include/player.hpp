@@ -10,7 +10,8 @@ struct Player
 	tra::engine::EntityId m_id;
 	Vector2f m_position;
 	Vector2f m_lastMousePosition;
-	float m_rotation = 0;
+	float m_rotation;
+	float m_shootCooldown;
 };
 
 class PlayerManager

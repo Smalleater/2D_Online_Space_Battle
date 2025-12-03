@@ -1,5 +1,7 @@
 #include "projectile.hpp"
 
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include <TRA/client/client.hpp>
 
 #include "gameMessage.hpp"
@@ -14,6 +16,21 @@ using namespace tra;
 
 void ProjectileManager::UpdateProjectiles(const float deltaTime)
 {
+	auto removeProjectileMessages = client::Client::Get()->getTcpMessages("DeleteProjectileMessage");
+	for (auto removeProjectileMessage : removeProjectileMessages.second)
+	{
+		auto castedMessage = std::static_pointer_cast<engine::DeleteProjectileMessage>(removeProjectileMessage);
+		int projectileId = castedMessage->m_projectileId;
+		for (auto it = m_projectiles.begin(); it != m_projectiles.end(); ++it)
+		{
+			if (it->first == projectileId)
+			{
+				m_projectiles.erase(it);
+				break;
+			}
+		}
+	}
+
 	auto newProjectileMessages = client::Client::Get()->getTcpMessages("NewProjectileMessage");
 	for (auto newProjectileMessage : newProjectileMessages.second)
 	{
@@ -68,7 +85,7 @@ void ProjectileManager::CreateProjectile(const uint32_t _id, const sf::Vector2f&
 	sprite.setOrigin(sf::Vector2f(m_texture->getSize().x / 2.f, m_texture->getSize().y / 2.f));
 	sprite.setPosition(position);
 
-	float angle = std::atan2(direction.y, direction.x);
+	float angle = std::atan2(direction.y, direction.x) + 90.0f * (M_PI / 180.f);
 	sprite.setRotation(sf::radians(angle));
 
 	m_projectiles.emplace_back(_id, Projectile(sprite));

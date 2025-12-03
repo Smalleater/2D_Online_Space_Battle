@@ -42,4 +42,8 @@ FIELD(float, m_positionX)
 FIELD(float, m_positionY)
 DECLARE_MESSAGE_END()
 
+DECLARE_MESSAGE_BEGIN(DeleteProjectileMessage)
+FIELD(int, m_projectileId)
+DECLARE_MESSAGE_END()
+
 #endif

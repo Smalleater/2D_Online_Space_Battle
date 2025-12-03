@@ -14,6 +14,7 @@
 constexpr float MOVE_SPEED = 200.0f;
 constexpr float WORLD_SIZE = 800.0f;
 constexpr float MOUSE_DEAD_ZONE = 5.0f;
+constexpr float SHOOT_COOLDOWN = 0.2f;
 
 using namespace tra;
 
@@ -132,8 +133,17 @@ void PlayerManager::updatePlayers(float deltaTime)
 		messagesResult = server::Server::Get()->getTcpMessages(playersId[i], "ShootInputMessage");
 		if (messagesResult.second.size() != 0)
 		{
-			Vector2f direction(std::cos(it->m_rotation), std::sin(it->m_rotation));
-			ProjectileManager::createProjectile(it->m_position, direction);
+			if (it->m_shootCooldown <= 0)
+			{
+				it->m_shootCooldown = SHOOT_COOLDOWN;
+				Vector2f direction(std::cos(it->m_rotation - M_PI / 2), std::sin(it->m_rotation - M_PI / 2));
+				ProjectileManager::createProjectile(it->m_position, direction);
+			}
+		}
+
+		if (it->m_shootCooldown > 0)
+		{
+			it->m_shootCooldown -= deltaTime;
 		}
 	}
 }

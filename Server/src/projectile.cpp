@@ -7,6 +7,7 @@
 #include "gameMessage.hpp"
 
 constexpr float WORLD_SIZE = 800.0f;
+constexpr float PROJECTILE_LIFETIME = 2.0f;
 
 std::vector<Projectile> ProjectileManager::m_projectiles;
 uint32_t ProjectileManager::m_nextProjectileId = 0;
@@ -19,6 +20,7 @@ void ProjectileManager::createProjectile(const Vector2f& position, const Vector2
 	projectile.m_id = m_nextProjectileId++;
 	projectile.m_position = position;
 	projectile.m_direction = direction;
+	projectile.lifetime = 0.0f;
 	m_projectiles.push_back(projectile);
 
 	std::shared_ptr<engine::NewProjectileMessage> msg = std::make_shared<engine::NewProjectileMessage>();
@@ -38,11 +40,29 @@ void ProjectileManager::createProjectile(const Vector2f& position, const Vector2
 void ProjectileManager::updateProjectiles(const float deltaTime)
 {
 	std::shared_ptr<engine::UpdateProjectilePositionMessage> updateProjectilePositionMessage = nullptr;
+	std::shared_ptr<engine::DeleteProjectileMessage> removeProjectileMessage = nullptr;
 	std::vector<engine::EntityId> playersId = server::Server::Get()->queryEntityIds<engine::NetworkRootComponentTag, engine::ConnectedComponentTag>();
 
 	const float speed = 300.0f;
 	for (size_t i = 0; i < m_projectiles.size(); i++)
 	{
+		m_projectiles[i].lifetime += deltaTime;
+		if (m_projectiles[i].lifetime >= PROJECTILE_LIFETIME)
+		{
+			removeProjectileMessage = std::make_shared<engine::DeleteProjectileMessage>();
+			removeProjectileMessage->m_projectileId = m_projectiles[i].m_id;
+
+			for (size_t j = 0; j < playersId.size(); j++)
+			{
+				server::Server::Get()->sendTcpMessage(playersId[j], removeProjectileMessage);
+			}
+
+			m_projectiles.erase(m_projectiles.begin() + i);
+			i--;
+
+			continue;
+		}
+
 		m_projectiles[i].m_position.x += m_projectiles[i].m_direction.x * speed * deltaTime;
 		m_projectiles[i].m_position.y += m_projectiles[i].m_direction.y * speed * deltaTime;
 

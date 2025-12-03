@@ -11,6 +11,7 @@ struct Projectile
 	uint32_t m_id;
 	Vector2f m_position;
 	Vector2f m_direction;
+	float lifetime;
 };
 
 class ProjectileManager
