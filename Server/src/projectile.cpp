@@ -5,19 +5,23 @@
 #include <TRA/engine/connectionStatusComponent.hpp>
 
 #include "gameMessage.hpp"
+#include "player.hpp"
 
 constexpr float WORLD_SIZE = 800.0f;
-constexpr float PROJECTILE_LIFETIME = 2.0f;
+constexpr float PROJECTILE_LIFETIME = 1.0f;
+constexpr float PROJECTILE_RADIUS = 5.0f;
+constexpr float PROJECTILE_SPEED = 500.0f;
 
 std::vector<Projectile> ProjectileManager::m_projectiles;
 uint32_t ProjectileManager::m_nextProjectileId = 0;
 
 using namespace tra;
 
-void ProjectileManager::createProjectile(const Vector2f& position, const Vector2f& direction)
+void ProjectileManager::createProjectile(const tra::engine::EntityId _m_shooterId, const Vector2f& position, const Vector2f& direction)
 {
 	Projectile projectile;
 	projectile.m_id = m_nextProjectileId++;
+	projectile.m_shooterId = _m_shooterId;
 	projectile.m_position = position;
 	projectile.m_direction = direction;
 	projectile.lifetime = 0.0f;
@@ -43,28 +47,27 @@ void ProjectileManager::updateProjectiles(const float deltaTime)
 	std::shared_ptr<engine::DeleteProjectileMessage> removeProjectileMessage = nullptr;
 	std::vector<engine::EntityId> playersId = server::Server::Get()->queryEntityIds<engine::NetworkRootComponentTag, engine::ConnectedComponentTag>();
 
-	const float speed = 300.0f;
 	for (size_t i = 0; i < m_projectiles.size(); i++)
 	{
 		m_projectiles[i].lifetime += deltaTime;
 		if (m_projectiles[i].lifetime >= PROJECTILE_LIFETIME)
 		{
-			removeProjectileMessage = std::make_shared<engine::DeleteProjectileMessage>();
-			removeProjectileMessage->m_projectileId = m_projectiles[i].m_id;
-
-			for (size_t j = 0; j < playersId.size(); j++)
-			{
-				server::Server::Get()->sendTcpMessage(playersId[j], removeProjectileMessage);
-			}
-
-			m_projectiles.erase(m_projectiles.begin() + i);
+			removeProjectile(i);
 			i--;
 
 			continue;
 		}
 
-		m_projectiles[i].m_position.x += m_projectiles[i].m_direction.x * speed * deltaTime;
-		m_projectiles[i].m_position.y += m_projectiles[i].m_direction.y * speed * deltaTime;
+		if (checkCollision(m_projectiles[i]))
+		{
+			removeProjectile(i);
+			i--;
+
+			continue;
+		}
+
+		m_projectiles[i].m_position.x += m_projectiles[i].m_direction.x * PROJECTILE_SPEED * deltaTime;
+		m_projectiles[i].m_position.y += m_projectiles[i].m_direction.y * PROJECTILE_SPEED * deltaTime;
 
 		if (m_projectiles[i].m_position.x < 0.0f)
 		{
@@ -94,4 +97,42 @@ void ProjectileManager::updateProjectiles(const float deltaTime)
 			server::Server::Get()->sendTcpMessage(playersId[j], updateProjectilePositionMessage);
 		}
 	}
+}
+
+void ProjectileManager::removeProjectile(size_t _index)
+{
+	std::shared_ptr<engine::DeleteProjectileMessage> removeProjectileMessage = std::make_shared<engine::DeleteProjectileMessage>();
+	removeProjectileMessage->m_projectileId = m_projectiles[_index].m_id;
+
+	std::vector<engine::EntityId> playersId = server::Server::Get()->queryEntityIds<engine::NetworkRootComponentTag, engine::ConnectedComponentTag>();
+	for (size_t i = 0; i < playersId.size(); i++)
+	{
+		server::Server::Get()->sendTcpMessage(playersId[i], removeProjectileMessage);
+	}
+
+	m_projectiles.erase(m_projectiles.begin() + _index);
+}
+
+bool ProjectileManager::checkCollision(const Projectile& _projectil)
+{
+	for (auto& player : PlayerManager::getPlayers())
+	{
+		if (player.m_id == _projectil.m_shooterId)
+		{
+			continue;
+		}
+
+		float dx = _projectil.m_position.x - player.m_position.x;
+		float dy = _projectil.m_position.y - player.m_position.y;
+
+		float distanceSquared = dx * dx + dy * dy;
+		float radiusSum = PROJECTILE_RADIUS + PLAYER_RADIUS;
+
+		if (distanceSquared <= radiusSum * radiusSum)
+		{
+			return true;
+		}
+	}
+
+	return false;
 }

@@ -5,6 +5,8 @@
 
 #include "vector.hpp"
 
+constexpr float PLAYER_RADIUS = 15.0f;
+
 struct Player
 {
 	tra::engine::EntityId m_id;
@@ -21,6 +23,7 @@ public:
 	static void addNewPlayers();
 
 	static void updatePlayers(float deltaTime);
+	static const std::vector<Player>& getPlayers() { return m_players; }
 
 private:
 	static std::vector<Player> m_players;

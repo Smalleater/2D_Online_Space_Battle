@@ -137,7 +137,7 @@ void PlayerManager::updatePlayers(float deltaTime)
 			{
 				it->m_shootCooldown = SHOOT_COOLDOWN;
 				Vector2f direction(std::cos(it->m_rotation - M_PI / 2), std::sin(it->m_rotation - M_PI / 2));
-				ProjectileManager::createProjectile(it->m_position, direction);
+				ProjectileManager::createProjectile(it->m_id, it->m_position, direction);
 			}
 		}
 
