@@ -9,7 +9,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 
-add_executable(2D_Online_Space_Battle_Server src/main.cpp "src/player.cpp")
+add_executable(2D_Online_Space_Battle_Server src/main.cpp "src/player.cpp" "src/projectile.cpp")
 
 target_include_directories(2D_Online_Space_Battle_Server 
 	PRIVATE 

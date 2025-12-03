@@ -3,12 +3,13 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-#include "TRA/engine/newConnectionComponent.hpp"
-#include "TRA/engine/networkRootComponentTag.hpp"
-#include "TRA/engine/connectionStatusComponent.hpp"
-#include "TRA/engine/disconnectedComponent.hpp"
+#include <TRA/engine/newConnectionComponent.hpp>
+#include <TRA/engine/networkRootComponentTag.hpp>
+#include <TRA/engine/connectionStatusComponent.hpp>
+#include <TRA/engine/disconnectedComponent.hpp>
 
 #include "gameMessage.hpp"
+#include "projectile.hpp"
 
 constexpr float MOVE_SPEED = 200.0f;
 constexpr float WORLD_SIZE = 800.0f;
@@ -132,6 +133,7 @@ void PlayerManager::updatePlayers(float deltaTime)
 		if (messagesResult.second.size() != 0)
 		{
 			Vector2f direction(std::cos(it->m_rotation), std::sin(it->m_rotation));
+			ProjectileManager::createProjectile(it->m_position, direction);
 		}
 	}
 }

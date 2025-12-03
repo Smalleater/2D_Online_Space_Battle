@@ -18,7 +18,7 @@ FetchContent_MakeAvailable(SFML)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 
-add_executable(2D_Online_Space_Battle_Client src/main.cpp "src/player.cpp" "src/enemy.cpp")
+add_executable(2D_Online_Space_Battle_Client src/main.cpp "src/player.cpp" "src/enemy.cpp" "src/projectile.cpp")
 
 target_include_directories(2D_Online_Space_Battle_Client 
 	PRIVATE 

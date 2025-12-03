@@ -1,7 +1,7 @@
 #ifndef GAME_MESSAGE_HPP
 #define GAME_MESSAGE_HPP
 
-#include "TRA/engine/message.hpp"
+#include <TRA/engine/message.hpp>
 
 DECLARE_MESSAGE_BEGIN(NewClientMessage)
 FIELD(int, m_id)
@@ -28,5 +28,12 @@ DECLARE_MESSAGE_END()
 DECLARE_MESSAGE_BEGIN(ShootInputMessage)
 DECLARE_MESSAGE_END()
 
+DECLARE_MESSAGE_BEGIN(NewProjectileMessage)
+FIELD(int, m_projectileId)
+FIELD(float, m_positionX)
+FIELD(float, m_positionY)
+FIELD(float, m_directionX)
+FIELD(float, m_directionY)
+DECLARE_MESSAGE_END()
 
 #endif

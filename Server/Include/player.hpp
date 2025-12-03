@@ -1,7 +1,7 @@
 #ifndef PLAYER_HPP
 #define PLAYER_HPP
 
-#include "TRA/server/server.hpp"
+#include <TRA/server/server.hpp>
 
 #include "vector.hpp"
 

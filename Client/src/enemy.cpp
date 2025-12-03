@@ -1,7 +1,8 @@
 #include "enemy.hpp"
 
-#include "TRA/client/client.hpp"
-#include "TRA/engine/message.hpp"
+#include <TRA/client/client.hpp>
+#include <TRA/engine/message.hpp>
+
 #include "gameMessage.hpp"
 
 #define SPRITE_LOAD_PATH "resources/sprites/enemy.png"

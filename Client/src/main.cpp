@@ -1,9 +1,9 @@
 #include <SFML/Graphics.hpp>
-
-#include "TRA/client/client.hpp"
+#include <TRA/client/client.hpp>
 
 #include "player.hpp"
 #include "enemy.hpp"
+#include "projectile.hpp"
 
 using namespace tra;
 
@@ -43,11 +43,13 @@ int main()
         }
 
 		player.Update(deltaTime, window);
-
-		client::Client::Get()->endUpdate();
+		ProjectileManager::UpdateProjectiles(deltaTime);
 		EnemyManager::UpdateEnemis();
 
+		client::Client::Get()->endUpdate();
+
         window.clear();
+		ProjectileManager::DrawProjectiles(window);
 		EnemyManager::DrawEnemis(window);
 		player.Draw(window);
         window.display();

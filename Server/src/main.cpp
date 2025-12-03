@@ -2,7 +2,7 @@
 #include <chrono>
 #include <thread>
 
-#include "TRA/server/server.hpp"
+#include <TRA/server/server.hpp>
 
 #include "player.hpp"
 

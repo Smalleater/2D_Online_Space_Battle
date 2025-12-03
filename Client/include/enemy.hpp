@@ -2,7 +2,7 @@
 #define ENEMY_HPP
 
 #include <map>
-#include "SFML/Graphics.hpp"
+#include <SFML/Graphics.hpp>
 
 struct Enemy
 {

@@ -2,8 +2,8 @@
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <TRA/client/client.hpp>
 
-#include "TRA/client/client.hpp"
 #include "gameMessage.hpp"
 
 #define SPRITE_LOAD_PATH "resources/sprites/ship.png"
