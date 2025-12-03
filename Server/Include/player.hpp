@@ -22,11 +22,15 @@ public:
 	static void removeDisconnectedPlayers();
 	static void addNewPlayers();
 
-	static void updatePlayers(float deltaTime);
 	static const std::vector<Player>& getPlayers() { return m_players; }
+
+	static void updatePlayers(float deltaTime);
+	static void playerHitByProjectile(const tra::engine::EntityId _playerEntityId);
 
 private:
 	static std::vector<Player> m_players;
+
+	static Vector2f getRespawnPosition();
 
 	static void updatePlayerRotation(const float _mouseWorldPosX, const float _mouseWorldPosY, std::vector<Player>::iterator& _it);
 	static void updatePlayerMovement(const int _moveDirectionX, const int _moveDirectionY, std::vector<Player>::iterator& _it, const float deltaTime);

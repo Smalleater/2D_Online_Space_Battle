@@ -11,6 +11,8 @@ using namespace tra;
 
 int main()
 {
+	srand(static_cast<unsigned int>(time(nullptr)));
+
 	std::string port;
 
 	std::cout << "Enter port number to start the server: ";

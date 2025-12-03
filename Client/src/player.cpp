@@ -80,6 +80,15 @@ void Player::PollEvents(const std::optional<sf::Event>& _event, const float _dt)
 
 void Player::Update(const float _dt, const sf::RenderWindow& _window)
 {
+	auto respawnMessage = client::Client::Get()->getTcpMessages("RespawnMessage");
+	if (!respawnMessage.second.empty())
+	{
+		auto castedMessage = std::static_pointer_cast<engine::RespawnMessage>(respawnMessage.second.back());
+		float positionX = castedMessage->m_positionX;
+		float positionY = castedMessage->m_positionY;
+		m_sprite->setPosition(sf::Vector2f(positionX, positionY));
+	}
+
 	std::shared_ptr<engine::MovementInputMessage> movementInputMessage = std::make_shared<engine::MovementInputMessage>();
 
 	UpdateRotation(movementInputMessage, _dt, _window);

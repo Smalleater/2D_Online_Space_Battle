@@ -25,6 +25,11 @@ FIELD(float, m_positionX)
 FIELD(float, m_positionY)
 DECLARE_MESSAGE_END()
 
+DECLARE_MESSAGE_BEGIN(RespawnMessage)
+FIELD(float, m_positionX)
+FIELD(float, m_positionY)
+DECLARE_MESSAGE_END()
+
 DECLARE_MESSAGE_BEGIN(ShootInputMessage)
 DECLARE_MESSAGE_END()
 

@@ -149,6 +149,7 @@ bool ProjectileManager::checkCollision(const Projectile& _projectil)
 
 		if (distanceSquared <= radiusSum * radiusSum)
 		{
+			PlayerManager::playerHitByProjectile(player.m_id);
 			return true;
 		}
 	}

@@ -14,7 +14,8 @@
 constexpr float MOVE_SPEED = 200.0f;
 constexpr float WORLD_SIZE = 800.0f;
 constexpr float MOUSE_DEAD_ZONE = 5.0f;
-constexpr float SHOOT_COOLDOWN = 0.2f;
+constexpr float SHOOT_COOLDOWN = 0.3f;
+constexpr float RESPAWN_BORDER_OFFSET = 50.0f;
 
 using namespace tra;
 
@@ -59,7 +60,13 @@ void PlayerManager::addNewPlayers()
 	{
 		Player newPlayer;
 		newPlayer.m_id = newConections[i];
+		newPlayer.m_position = getRespawnPosition();
 		m_players.push_back(newPlayer);
+
+		std::shared_ptr<engine::RespawnMessage> respawnMessage = std::make_shared<engine::RespawnMessage>();
+		respawnMessage->m_positionX = newPlayer.m_position.x;
+		respawnMessage->m_positionY = newPlayer.m_position.y;
+		server::Server::Get()->sendTcpMessage(newPlayer.m_id, respawnMessage);
 
 		std::vector<engine::EntityId> playersId = server::Server::Get()->queryEntityIds<engine::NetworkRootComponentTag, engine::ConnectedComponentTag>();
 		std::shared_ptr<engine::NewClientMessage> newClientMessage = nullptr;
@@ -146,6 +153,59 @@ void PlayerManager::updatePlayers(float deltaTime)
 			it->m_shootCooldown -= deltaTime;
 		}
 	}
+}
+
+void PlayerManager::playerHitByProjectile(const tra::engine::EntityId _playerEntityId)
+{
+	auto it = std::find_if(m_players.begin(), m_players.end(),
+		[_playerEntityId](const Player& player)
+		{
+			return player.m_id == _playerEntityId;
+		});
+	if (it == m_players.end())
+	{
+		return;
+	}
+
+	it->m_position = getRespawnPosition();
+
+	std::shared_ptr<engine::RespawnMessage> respawnMessage = std::make_shared<engine::RespawnMessage>();
+	respawnMessage->m_positionX = it->m_position.x;
+	respawnMessage->m_positionY = it->m_position.y;
+	server::Server::Get()->sendTcpMessage(it->m_id, respawnMessage);
+
+	std::vector<engine::EntityId> playersId = server::Server::Get()->queryEntityIds<engine::NetworkRootComponentTag, engine::ConnectedComponentTag>();
+	std::shared_ptr<engine::UpdateRotationAndPositionMessage> updateRotationAndPositionMessage = std::make_shared<engine::UpdateRotationAndPositionMessage>();
+
+	updateRotationAndPositionMessage->m_id = it->m_id;
+	updateRotationAndPositionMessage->m_rotation = it->m_rotation;
+	updateRotationAndPositionMessage->m_positionX = it->m_position.x;
+	updateRotationAndPositionMessage->m_positionY = it->m_position.y;
+
+	for (size_t i = 0; i < playersId.size(); i++)
+	{
+		if (playersId[i] != it->m_id)
+		{
+			server::Server::Get()->sendTcpMessage(playersId[i], updateRotationAndPositionMessage);
+		}
+	}
+}
+
+Vector2f PlayerManager::getRespawnPosition()
+{
+	Vector2f respawnPosition;
+	if (rand() % 2)
+	{
+		respawnPosition.x = rand() % 2 ? 0.0f + RESPAWN_BORDER_OFFSET : WORLD_SIZE - RESPAWN_BORDER_OFFSET;
+		respawnPosition.y = RESPAWN_BORDER_OFFSET + static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * (WORLD_SIZE - 2 * RESPAWN_BORDER_OFFSET);
+	}
+	else
+	{
+		respawnPosition.x = RESPAWN_BORDER_OFFSET + static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * (WORLD_SIZE - 2 * RESPAWN_BORDER_OFFSET);
+		respawnPosition.y = rand() % 2 ? 0.0f + RESPAWN_BORDER_OFFSET : WORLD_SIZE - RESPAWN_BORDER_OFFSET;
+	}
+
+	return respawnPosition;
 }
 
 void PlayerManager::updatePlayerRotation(const float _mouseWorldPosX, const float _mouseWorldPosY, std::vector<Player>::iterator& _it)
