@@ -14,8 +14,13 @@ constexpr float MOUSE_DEAD_ZONE = 5.0f;
 
 using namespace tra;
 
+static inline int signf(float v) { return (v > 0.0f) - (v < 0.0f); }
+
 Player::Player()
 {
+	std::random_device rd;
+	m_rng.seed(rd());
+
 	if (!m_spriteTexture.loadFromFile(SPRITE_LOAD_PATH))
 	{
 		throw std::runtime_error("Failed to load player sprite texture from " SPRITE_LOAD_PATH);
@@ -23,6 +28,12 @@ Player::Player()
 
 	m_sprite = new sf::Sprite(m_spriteTexture);
 	m_sprite->setOrigin(sf::Vector2f(m_spriteTexture.getSize().x / 2.0f, m_spriteTexture.getSize().y / 2.0f));
+	
+	m_moveDirection = sf::Vector2i(0, 0);
+	m_lastWorldMousePosition = sf::Vector2f(0.0f, 0.0f);
+	m_botTarget = sf::Vector2f(0.0f, 0.0f);
+	m_botChangeTimer = 0.0f;
+	m_shootCooldown = 0.0f;
 }
 
 Player::~Player()
@@ -30,8 +41,10 @@ Player::~Player()
 
 }
 
-void Player::PollEvents(const std::optional<sf::Event>& _event, const float _dt)
+void Player::PollEvents(const std::optional<sf::Event>& _event)
 {
+	if (m_isBot) return;
+
 	if (const auto* keyPressed = _event->getIf<sf::Event::KeyPressed>())
 	{
 		if (keyPressed->scancode == sf::Keyboard::Scancode::W)
@@ -78,8 +91,67 @@ void Player::PollEvents(const std::optional<sf::Event>& _event, const float _dt)
 	}
 }
 
+void Player::BotEvents(const float _dt)
+{
+	m_botChangeTimer -= _dt;
+	m_shootCooldown -= _dt;
+
+	if (m_botChangeTimer <= 0.0f)
+	{
+		std::uniform_real_distribution<float> posDist(0.0f, WORLD_SIZE);
+		std::uniform_real_distribution<float> timeDist(0.3f, 1.0f);
+
+		m_botTarget.x = posDist(m_rng);
+		m_botTarget.y = posDist(m_rng);
+		m_botChangeTimer = timeDist(m_rng);
+	}
+
+	m_lastWorldMousePosition = m_botTarget;
+
+	sf::Vector2f shipPos = m_sprite->getPosition();
+	sf::Vector2f toTarget = m_botTarget - shipPos;
+	float distance = std::sqrt(toTarget.x * toTarget.x + toTarget.y * toTarget.y);
+
+	m_moveDirection.x = 0;
+
+	const float stopDistance = 10.0f;
+
+	if (distance > 1e-3f)
+	{
+		m_moveDirection.y = (distance > stopDistance) ? -1 : 0;
+
+		float rotation = m_sprite->getRotation().asRadians();
+		sf::Vector2f forwardDirection(std::cos(rotation), std::sin(rotation));
+		sf::Vector2f dirNorm = (distance > 0.0001f) ? sf::Vector2f(toTarget.x / distance, toTarget.y / distance) : sf::Vector2f(0.0f, 0.0f);
+		float forwardDot = dirNorm.x * forwardDirection.x + dirNorm.y * forwardDirection.y;
+
+		const float aimThreshold = 0.10f;
+		const float maxShootDistance = 600.0f;
+		const float botShootCooldown = 0.10f;
+		if (forwardDot >= aimThreshold && m_shootCooldown <= 0.0f)
+		{
+			m_isShooting = true;
+			m_shootCooldown = botShootCooldown;
+		}
+		else
+		{
+			m_isShooting = false;
+		}
+	}
+	else
+	{
+		m_moveDirection.y = 0;
+		m_isShooting = false;
+	}
+}
+
 void Player::Update(const float _dt, const sf::RenderWindow& _window)
 {
+	if (m_isBot)
+	{
+		BotEvents(_dt);
+	}
+
 	auto respawnMessage = client::Client::Get()->getTcpMessages("RespawnMessage");
 	if (!respawnMessage.second.empty())
 	{
@@ -87,6 +159,11 @@ void Player::Update(const float _dt, const sf::RenderWindow& _window)
 		float positionX = castedMessage->m_positionX;
 		float positionY = castedMessage->m_positionY;
 		m_sprite->setPosition(sf::Vector2f(positionX, positionY));
+
+		if (m_isBot && (m_botTarget.x == 0.0f && m_botTarget.y == 0.0f))
+		{
+			m_botTarget = m_sprite->getPosition();
+		}
 	}
 
 	std::shared_ptr<engine::MovementInputMessage> movementInputMessage = std::make_shared<engine::MovementInputMessage>();
@@ -114,6 +191,22 @@ void Player::UpdateRotation(std::shared_ptr<engine::MovementInputMessage> _movem
 	{
 		_movementInputMessage->m_mouseWorldPosX = m_lastWorldMousePosition.x;
 		_movementInputMessage->m_mouseWorldPosY = m_lastWorldMousePosition.y;
+		return;
+	}
+
+	if (m_isBot)
+	{
+		_movementInputMessage->m_mouseWorldPosX = m_lastWorldMousePosition.x;
+		_movementInputMessage->m_mouseWorldPosY = m_lastWorldMousePosition.y;
+
+		sf::Vector2f worldMousePosition = m_lastWorldMousePosition;
+		sf::Vector2f shipPosition = m_sprite->getPosition();
+
+		float deltaX = worldMousePosition.x - shipPosition.x;
+		float deltaY = worldMousePosition.y - shipPosition.y;
+		float angleRadians = std::atan2(deltaY, deltaX) + 90.0f * (static_cast<float>(M_PI) / 180.0f);
+
+		m_sprite->setRotation(sf::radians(angleRadians));
 		return;
 	}
 
