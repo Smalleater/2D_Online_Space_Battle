@@ -187,36 +187,22 @@ void Player::Draw(sf::RenderWindow& _window)
 
 void Player::UpdateRotation(std::shared_ptr<engine::MovementInputMessage> _movementInputMessage, const float _dt, const sf::RenderWindow& _window)
 {
-	if (m_isNotFocused)
+	sf::Vector2f worldMousePosition;
+
+	if (m_isNotFocused || m_isBot)
 	{
-		_movementInputMessage->m_mouseWorldPosX = m_lastWorldMousePosition.x;
-		_movementInputMessage->m_mouseWorldPosY = m_lastWorldMousePosition.y;
-		return;
+		worldMousePosition = m_lastWorldMousePosition;
 	}
-
-	if (m_isBot)
+	else
 	{
-		_movementInputMessage->m_mouseWorldPosX = m_lastWorldMousePosition.x;
-		_movementInputMessage->m_mouseWorldPosY = m_lastWorldMousePosition.y;
-
-		sf::Vector2f worldMousePosition = m_lastWorldMousePosition;
-		sf::Vector2f shipPosition = m_sprite->getPosition();
-
-		float deltaX = worldMousePosition.x - shipPosition.x;
-		float deltaY = worldMousePosition.y - shipPosition.y;
-		float angleRadians = std::atan2(deltaY, deltaX) + 90.0f * (static_cast<float>(M_PI) / 180.0f);
-
-		m_sprite->setRotation(sf::radians(angleRadians));
-		return;
+		sf::Vector2i mousePosition = sf::Mouse::getPosition(_window);
+		worldMousePosition = _window.mapPixelToCoords(mousePosition);
+		m_lastWorldMousePosition = worldMousePosition;
 	}
-
-	sf::Vector2i mousePosition = sf::Mouse::getPosition(_window);
-	sf::Vector2f worldMousePosition = _window.mapPixelToCoords(mousePosition);
-	m_lastWorldMousePosition = worldMousePosition;
 
 	_movementInputMessage->m_mouseWorldPosX = worldMousePosition.x;
 	_movementInputMessage->m_mouseWorldPosY = worldMousePosition.y;
-
+	
 	sf::Vector2f shipPosition = m_sprite->getPosition();
 
 	float deltaX = worldMousePosition.x - shipPosition.x;
