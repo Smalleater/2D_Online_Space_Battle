@@ -1,5 +1,5 @@
-#ifndef TRA_CORE_WSA_INITIALIZER_HPP
-#define TRA_CORE_WSA_INITIALIZER_HPP
+#ifndef TRA_NETCODE_CORE_WSA_INITIALIZER_HPP
+#define TRA_NETCODE_CORE_WSA_INITIALIZER_HPP
 
 #ifdef _WIN32
 
@@ -8,7 +8,7 @@
 
 #include <WinSock2.h>
 
-namespace tra::core
+namespace tra::netcode::core
 {
 	class WSAInitializer
 	{

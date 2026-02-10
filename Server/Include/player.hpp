@@ -1,7 +1,7 @@
 #ifndef PLAYER_HPP
 #define PLAYER_HPP
 
-#include <TRA/server/server.hpp>
+#include <TRA/netcode/server/server.hpp>
 
 #include "vector.hpp"
 
@@ -9,7 +9,7 @@ constexpr float PLAYER_RADIUS = 15.0f;
 
 struct Player
 {
-	tra::engine::EntityId m_id;
+	ecs::Entity m_entity;
 	Vector2f m_position;
 	Vector2f m_lastMousePosition;
 	float m_rotation;
@@ -25,10 +25,11 @@ public:
 	static const std::vector<Player>& getPlayers() { return m_players; }
 
 	static void updatePlayers(float deltaTime);
-	static void playerHitByProjectile(const tra::engine::EntityId _playerEntityId);
+	static void playerHitByProjectile(const tra::ecs::Entity _playerEntity);
 
 private:
 	static std::vector<Player> m_players;
+	static std::map<ecs::Entity, size_t> m_playersSparse;
 
 	static Vector2f getRespawnPosition();
 

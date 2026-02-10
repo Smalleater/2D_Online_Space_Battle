@@ -1,8 +1,7 @@
 #include "projectile.hpp"
 
-#include <TRA/server/server.hpp>
-#include <TRA/engine/networkRootComponentTag.hpp>
-#include <TRA/engine/connectionStatusComponent.hpp>
+#include <TRA/netcode/server/server.hpp>
+#include <TRA/netcode/engine/tags.hpp>
 
 #include "gameMessage.hpp"
 #include "player.hpp"
@@ -17,17 +16,17 @@ uint32_t ProjectileManager::m_nextProjectileId = 0;
 
 using namespace tra;
 
-void ProjectileManager::createProjectile(const tra::engine::EntityId _m_shooterId, const Vector2f& position, const Vector2f& direction)
+void ProjectileManager::createProjectile(const tra::ecs::Entity _m_shooter, const Vector2f& position, const Vector2f& direction)
 {
 	Projectile projectile;
 	projectile.m_id = m_nextProjectileId++;
-	projectile.m_shooterId = _m_shooterId;
+	projectile.m_shooter = _m_shooter;
 	projectile.m_position = position;
 	projectile.m_direction = direction;
 	projectile.lifetime = 0.0f;
 	m_projectiles.push_back(projectile);
 
-	std::shared_ptr<engine::NewProjectileMessage> msg = std::make_shared<engine::NewProjectileMessage>();
+	std::shared_ptr<NewProjectileMessage> msg = std::make_shared<engine::NewProjectileMessage>();
 	msg->m_projectileId = projectile.m_id;
 	msg->m_positionX = projectile.m_position.x;
 	msg->m_positionY = projectile.m_position.y;

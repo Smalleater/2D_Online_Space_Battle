@@ -1,12 +1,12 @@
-#ifndef TRA_CORE_NET_UTILS_HPP
-#define TRA_CORE_NET_UTILS_HPP
+#ifndef TRA_NETCODE_CORE_NET_UTILS_HPP
+#define TRA_NETCODE_CORE_NET_UTILS_HPP
 
 #include "TRA/export.hpp"
 
 #include <string>
 #include <cstdint>
 
-namespace tra::core
+namespace tra::netcode::core
 {
 	namespace NetUtils
 	{

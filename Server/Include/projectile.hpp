@@ -4,13 +4,13 @@
 #include <cstdint>
 #include <vector>
 
-#include <TRA/server/server.hpp>
+#include <TRA/netcode/server/server.hpp>
 #include "vector.hpp"
 
 struct Projectile
 {
 	uint32_t m_id;
-	tra::engine::EntityId m_shooterId;
+	tra::ecs::Entity m_shooter;
 	Vector2f m_position;
 	Vector2f m_direction;
 	float lifetime;
@@ -19,7 +19,7 @@ struct Projectile
 class ProjectileManager
 {
 public:
-	static void createProjectile(const tra::engine::EntityId _m_shooterId, const Vector2f& position, const Vector2f& direction);
+	static void createProjectile(const tra::ecs::Entity _m_shooter, const Vector2f& position, const Vector2f& direction);
 	static void updateProjectiles(const float deltaTime);
 
 private:

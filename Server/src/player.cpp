@@ -3,10 +3,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-#include <TRA/engine/newConnectionComponent.hpp>
-#include <TRA/engine/networkRootComponentTag.hpp>
-#include <TRA/engine/connectionStatusComponent.hpp>
-#include <TRA/engine/disconnectedComponent.hpp>
+#include "TRA/netcode/engine/tags.hpp"
 
 #include "gameMessage.hpp"
 #include "projectile.hpp"
@@ -18,85 +15,99 @@ constexpr float SHOOT_COOLDOWN = 0.3f;
 constexpr float RESPAWN_BORDER_OFFSET = 50.0f;
 
 using namespace tra;
+using namespace tra::netcode;
 
 std::vector<Player> PlayerManager::m_players;
+std::map<ecs::Entity, size_t> PlayerManager::m_playersSparse;
 
 void PlayerManager::removeDisconnectedPlayers()
 {
-	std::vector<engine::EntityId> disconnectedClients = server::Server::Get()->queryEntityIds<engine::DisconnectedComponentTag>();
-	for (size_t i = 0; i < disconnectedClients.size(); i++)
+	for (auto& [entity] : server::Server::Get()->getEcsWorld()->queryEntities(
+		ecs::WithComponent<>{},
+		ecs::WithoutComponent<>{},
+		ecs::WithTag<tags::DisconnectedTag>{}))
 	{
-		auto it = std::find_if(m_players.begin(), m_players.end(),
-			[disconnectedClients, i](const Player& player)
-			{
-				return player.m_id == disconnectedClients[i];
-			});
-
-		if (it == m_players.end())
+		auto it = m_playersSparse.find(entity);
+		if (it == m_playersSparse.end())
 		{
 			continue;
 		}
 
-		std::vector<engine::EntityId> playersId = server::Server::Get()->queryEntityIds<engine::NetworkRootComponentTag, engine::ConnectedComponentTag>();
-		std::shared_ptr<engine::DisconnectedClientMessage> disconnectMessage = nullptr;
-		for (size_t y = 0; y < playersId.size(); y++)
+		size_t playerIndex = it->second;
+		Player& player = m_players.at(playerIndex);
+
+		auto disconnectedClientMessage = std::make_shared<message::DisconnectedClientMessage>();
+		disconnectedClientMessage->m_id = entity.id();
+
+		for (auto& [entity] : server::Server::Get()->getEcsWorld()->queryEntities(
+			ecs::WithComponent<>{},
+			ecs::WithoutComponent<>{},
+			ecs::WithTag<tags::ConnectedTag>{}))
 		{
-			if (playersId[y] == it->m_id) continue;
-			disconnectMessage = std::make_shared<engine::DisconnectedClientMessage>();
-			disconnectMessage->m_id = it->m_id;
-			server::Server::Get()->sendTcpMessage(playersId[y], disconnectMessage);
+			server::Server::Get()->sendTcpMessage(entity, disconnectedClientMessage);
 		}
 
-		m_players.erase(it);
+		size_t lastIndex = m_players.size() - 1;
+
+		if (playerIndex != lastIndex)
+		{
+			m_players[playerIndex] = std::move(m_players[lastIndex]);
+			m_playersSparse[m_players[playerIndex].m_entity] = playerIndex;
+		}
+
+		m_players.pop_back();
+		m_playersSparse.erase(it);
 	}
 }
 
 void PlayerManager::addNewPlayers()
 {
-	engine::EntityId selfEntityId = server::Server::Get()->getSelfEntityId();
-
-	std::vector<engine::EntityId> newConections = server::Server::Get()->queryEntityIds<engine::NewConnectionComponentTag>();
-	for (size_t i = 0; i < newConections.size(); i++)
+	for (auto& [newConnectionEntity] : server::Server::Get()->getEcsWorld()->queryEntities(
+		ecs::WithComponent<>{},
+		ecs::WithoutComponent<>{},
+		ecs::WithTag<tags::NewConnectionTag>{}))
 	{
 		Player newPlayer;
-		newPlayer.m_id = newConections[i];
+		newPlayer.m_entity = newConnectionEntity;
 		newPlayer.m_position = getRespawnPosition();
 		newPlayer.m_lastMousePosition = Vector2f(0, 0);
 		newPlayer.m_rotation = 0.0f;
 		newPlayer.m_shootCooldown = 0.0f;
 		m_players.push_back(newPlayer);
 
-		std::shared_ptr<engine::RespawnMessage> respawnMessage = std::make_shared<engine::RespawnMessage>();
+		std::shared_ptr<message::RespawnMessage> respawnMessage = std::make_shared<message::RespawnMessage>();
 		respawnMessage->m_positionX = newPlayer.m_position.x;
 		respawnMessage->m_positionY = newPlayer.m_position.y;
-		server::Server::Get()->sendTcpMessage(newPlayer.m_id, respawnMessage);
+		server::Server::Get()->sendTcpMessage(newConnectionEntity, respawnMessage);
 
-		std::vector<engine::EntityId> playersId = server::Server::Get()->queryEntityIds<engine::NetworkRootComponentTag, engine::ConnectedComponentTag>();
-		std::shared_ptr<engine::NewClientMessage> newClientMessage = nullptr;
-		for (size_t y = 0; y < playersId.size(); y++)
+		auto newClientMessage = std::make_shared<message::NewClientMessage>();
+
+		for (auto& [entity] : server::Server::Get()->getEcsWorld()->queryEntities(
+			ecs::WithComponent<>{},
+			ecs::WithoutComponent<>{},
+			ecs::WithTag<tags::ConnectedTag>{}))
 		{
-			if (playersId[y] == selfEntityId || playersId[y] == newConections[i]) continue;
+			server::Server::Get()->sendTcpMessage(entity, newClientMessage);
 
-			newClientMessage = std::make_shared<engine::NewClientMessage>();
-			newClientMessage->m_id = newConections[i];
-
-			server::Server::Get()->sendTcpMessage(playersId[y], newClientMessage);
-		}
-
-		for (size_t y = 0; y < playersId.size(); y++)
-		{
-			if (playersId[y] == selfEntityId || playersId[y] == newConections[i]) continue;
-
-			newClientMessage = std::make_shared<engine::NewClientMessage>();
-			newClientMessage->m_id = playersId[y];
-
-			server::Server::Get()->sendTcpMessage(newConections[i], newClientMessage);
+			auto oldNewClientMessage = std::make_shared<message::NewClientMessage>();
+			oldNewClientMessage->m_id = entity.id();
+			server::Server::Get()->sendTcpMessage(newConnectionEntity, oldNewClientMessage);
 		}
 	}
 }
 
 void PlayerManager::updatePlayers(float deltaTime)
 {
+	for (auto& [entity] : server::Server::Get()->getEcsWorld()->queryEntities(
+		ecs::WithComponent<>{},
+		ecs::WithoutComponent<>{},
+		ecs::WithTag<tags::ConnectedTag>{}))
+	{
+
+	}
+
+	/////////////////////////////
+
 	std::shared_ptr<engine::UpdateRotationAndPositionMessage> updateRotationAndPositionMessage = nullptr;
 
 	std::pair<ErrorCode, std::vector<std::shared_ptr<engine::Message>>> messagesResult;
@@ -158,12 +169,12 @@ void PlayerManager::updatePlayers(float deltaTime)
 	}
 }
 
-void PlayerManager::playerHitByProjectile(const tra::engine::EntityId _playerEntityId)
+void PlayerManager::playerHitByProjectile(const tra::ecs::Entity _playerEntity)
 {
 	auto it = std::find_if(m_players.begin(), m_players.end(),
-		[_playerEntityId](const Player& player)
+		[_playerEntity](const Player& player)
 		{
-			return player.m_id == _playerEntityId;
+			return player.m_id == _playerEntity;
 		});
 	if (it == m_players.end())
 	{

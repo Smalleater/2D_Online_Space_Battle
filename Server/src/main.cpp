@@ -2,12 +2,12 @@
 #include <chrono>
 #include <thread>
 
-#include <TRA/server/server.hpp>
+#include <TRA/netcode/server/server.hpp>
 
 #include "player.hpp"
 #include "projectile.hpp"
 
-using namespace tra;
+using namespace tra::netcode;
 
 int main()
 {
@@ -20,8 +20,6 @@ int main()
 
 	uint16_t portNumber = static_cast<uint16_t>(std::stoi(port));
 	server::Server::Get()->Start(portNumber);
-
-	engine::EntityId selfEntityId = server::Server::Get()->getSelfEntityId();
 
 	std::vector<Player> players;
 

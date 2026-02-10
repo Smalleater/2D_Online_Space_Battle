@@ -1,5 +1,5 @@
-#ifndef TRA_CORE_NETWORK_INCLUDE_HPP
-#define TRA_CORE_NETWORK_INCLUDE_HPP
+#ifndef TRA_NETCODE_CORE_NETWORK_INCLUDE_HPP
+#define TRA_NETCODE_CORE_NETWORK_INCLUDE_HPP
 
 #ifdef _WIN32
 
@@ -14,7 +14,7 @@
 
 #pragma comment(lib, "Ws2_32.lib")
 
-namespace tra::core
+namespace tra::netcode::core
 {
     using socket_t = SOCKET;
 
@@ -37,7 +37,7 @@ namespace tra::core
 #include <errno.h>
 #include <fcntl.h>
 
-namespace tra::core
+namespace tra::netcode::core
 {
     using socket_t = int;
 

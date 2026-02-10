@@ -1,5 +1,5 @@
-#ifndef TRA_ENGINE_MESSAGE_HPP
-#define TRA_ENGINE_MESSAGE_HPP
+#ifndef TRA_NETCODE_ENGINE_MESSAGE_HPP
+#define TRA_NETCODE_ENGINE_MESSAGE_HPP
 
 #include "TRA/export.hpp"
 #include "TRA/debugUtils.hpp"
@@ -13,7 +13,7 @@
 #include <functional>
 #include <algorithm>
 
-namespace tra::engine
+namespace tra::netcode::engine
 {
 	using FieldValue = std::variant<int, float, std::string>;
 	using SerializerFunc = std::function<void(const void*, std::vector<uint8_t>&)>;
@@ -35,7 +35,7 @@ namespace tra::engine
         TRA_API uint32_t hashTypeName(const char* _str);
 
         TRA_API void registerMessageType(const uint32_t _id,
-			std::unique_ptr<Message>(*_creator)(const std::vector<uint8_t>&));
+			std::shared_ptr<Message>(*_creator)(const std::vector<uint8_t>&));
 
         TRA_API void serializeField(std::vector<uint8_t>& _data, int _value);
         TRA_API void serializeField(std::vector<uint8_t>& _data, float _value);
@@ -69,7 +69,7 @@ namespace tra::engine
 }
 
 #define DECLARE_MESSAGE_BEGIN(MessageType) \
-namespace tra::engine { \
+namespace tra::message { \
     struct MessageType : public Message \
     { \
     public: \
@@ -112,9 +112,9 @@ namespace tra::engine { \
             } \
             return data; \
         } \
-        static std::unique_ptr<Message> createFromBytes(const std::vector<uint8_t>& _payload) \
+        static std::shared_ptr<Message> createFromBytes(const std::vector<uint8_t>& _payload) \
         { \
-            std::unique_ptr<CurrentMessageType> message = std::make_unique<CurrentMessageType>(); \
+            std::shared_ptr<CurrentMessageType> message = std::make_shared<CurrentMessageType>(); \
             size_t offset = sizeof(uint32_t); \
             auto& deserializers = getDeserializers(); \
             auto it = deserializers.find(MESSAGE_TYPE_ID); \

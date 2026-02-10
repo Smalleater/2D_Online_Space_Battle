@@ -1,7 +1,9 @@
 #ifndef GAME_MESSAGE_HPP
 #define GAME_MESSAGE_HPP
 
-#include <TRA/engine/message.hpp>
+#include <TRA/netcode/engine/message.hpp>
+
+using namespace tra::netcode::engine;
 
 DECLARE_MESSAGE_BEGIN(NewClientMessage)
 FIELD(int, m_id)
