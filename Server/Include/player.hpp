@@ -9,7 +9,7 @@ constexpr float PLAYER_RADIUS = 15.0f;
 
 struct Player
 {
-	ecs::Entity m_entity;
+	tra::ecs::Entity m_entity;
 	Vector2f m_position;
 	Vector2f m_lastMousePosition;
 	float m_rotation;
@@ -25,16 +25,16 @@ public:
 	static const std::vector<Player>& getPlayers() { return m_players; }
 
 	static void updatePlayers(float deltaTime);
-	static void playerHitByProjectile(const tra::ecs::Entity _playerEntity);
+	static void playerHitByProjectile(const tra::ecs::Entity _entity);
 
 private:
 	static std::vector<Player> m_players;
-	static std::map<ecs::Entity, size_t> m_playersSparse;
+	static std::unordered_map<tra::ecs::Entity, size_t> m_playersSparse;
 
 	static Vector2f getRespawnPosition();
 
-	static void updatePlayerRotation(const float _mouseWorldPosX, const float _mouseWorldPosY, std::vector<Player>::iterator& _it);
-	static void updatePlayerMovement(const int _moveDirectionX, const int _moveDirectionY, std::vector<Player>::iterator& _it, const float deltaTime);
+	static void updatePlayerRotation(const float _mouseWorldPosX, const float _mouseWorldPosY, Player& _player);
+	static void updatePlayerMovement(const int _moveDirectionX, const int _moveDirectionY, Player& _player, const float deltaTime);
 };
 
 #endif

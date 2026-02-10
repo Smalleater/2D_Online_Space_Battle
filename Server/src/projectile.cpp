@@ -15,6 +15,7 @@ std::vector<Projectile> ProjectileManager::m_projectiles;
 uint32_t ProjectileManager::m_nextProjectileId = 0;
 
 using namespace tra;
+using namespace tra::netcode;
 
 void ProjectileManager::createProjectile(const tra::ecs::Entity _m_shooter, const Vector2f& position, const Vector2f& direction)
 {
@@ -26,25 +27,28 @@ void ProjectileManager::createProjectile(const tra::ecs::Entity _m_shooter, cons
 	projectile.lifetime = 0.0f;
 	m_projectiles.push_back(projectile);
 
-	std::shared_ptr<NewProjectileMessage> msg = std::make_shared<engine::NewProjectileMessage>();
-	msg->m_projectileId = projectile.m_id;
-	msg->m_positionX = projectile.m_position.x;
-	msg->m_positionY = projectile.m_position.y;
-	msg->m_directionX = projectile.m_direction.x;
-	msg->m_directionY = projectile.m_direction.y;
+	auto newProjectileMessage = std::make_shared<message::NewProjectileMessage>();
+	newProjectileMessage->m_projectileId = projectile.m_id;
+	newProjectileMessage->m_positionX = projectile.m_position.x;
+	newProjectileMessage->m_positionY = projectile.m_position.y;
+	newProjectileMessage->m_directionX = projectile.m_direction.x;
+	newProjectileMessage->m_directionY = projectile.m_direction.y;
 
-	std::vector<engine::EntityId> playersId = server::Server::Get()->queryEntityIds<engine::NetworkRootComponentTag, engine::ConnectedComponentTag>();
-	for (size_t i = 0; i < playersId.size(); i++)
+	for (auto& [entity] : server::Server::Get()->getEcsWorld()->queryEntities(
+		ecs::WithComponent<>{},
+		ecs::WithoutComponent<>{},
+		ecs::WithTag<tags::ConnectedTag>{}))
 	{
-		server::Server::Get()->sendTcpMessage(playersId[i], msg);
+		server::Server::Get()->sendTcpMessage(entity, newProjectileMessage);
 	}
 }
 
 void ProjectileManager::updateProjectiles(const float deltaTime)
 {
-	std::shared_ptr<engine::UpdateProjectilePositionMessage> updateProjectilePositionMessage = nullptr;
-	std::shared_ptr<engine::DeleteProjectileMessage> removeProjectileMessage = nullptr;
-	std::vector<engine::EntityId> playersId = server::Server::Get()->queryEntityIds<engine::NetworkRootComponentTag, engine::ConnectedComponentTag>();
+	auto queryResult = server::Server::Get()->getEcsWorld()->queryEntities(
+		ecs::WithComponent<>{},
+		ecs::WithoutComponent<>{},
+		ecs::WithTag<tags::ConnectedTag>{});
 
 	for (size_t i = 0; i < m_projectiles.size(); i++)
 	{
@@ -74,27 +78,29 @@ void ProjectileManager::updateProjectiles(const float deltaTime)
 			continue;
 		}
 
-		updateProjectilePositionMessage = std::make_shared<engine::UpdateProjectilePositionMessage>();
+		auto updateProjectilePositionMessage = std::make_shared<message::UpdateProjectilePositionMessage>();
 		updateProjectilePositionMessage->m_projectileId = m_projectiles[i].m_id;
 		updateProjectilePositionMessage->m_positionX = m_projectiles[i].m_position.x;
 		updateProjectilePositionMessage->m_positionY = m_projectiles[i].m_position.y;
 
-		for (size_t j = 0; j < playersId.size(); j++)
+		for (auto& [entity] : queryResult)
 		{
-			server::Server::Get()->sendTcpMessage(playersId[j], updateProjectilePositionMessage);
+			server::Server::Get()->sendTcpMessage(entity, updateProjectilePositionMessage);
 		}
 	}
 }
 
 void ProjectileManager::removeProjectile(size_t _index)
 {
-	std::shared_ptr<engine::DeleteProjectileMessage> removeProjectileMessage = std::make_shared<engine::DeleteProjectileMessage>();
+	auto removeProjectileMessage = std::make_shared<message::DeleteProjectileMessage>();
 	removeProjectileMessage->m_projectileId = m_projectiles[_index].m_id;
 
-	std::vector<engine::EntityId> playersId = server::Server::Get()->queryEntityIds<engine::NetworkRootComponentTag, engine::ConnectedComponentTag>();
-	for (size_t i = 0; i < playersId.size(); i++)
+	for (auto& [entity] : server::Server::Get()->getEcsWorld()->queryEntities(
+		ecs::WithComponent<>{},
+		ecs::WithoutComponent<>{},
+		ecs::WithTag<tags::ConnectedTag>{}))
 	{
-		server::Server::Get()->sendTcpMessage(playersId[i], removeProjectileMessage);
+		server::Server::Get()->sendTcpMessage(entity, removeProjectileMessage);
 	}
 
 	m_projectiles.erase(m_projectiles.begin() + _index);
@@ -123,7 +129,7 @@ bool ProjectileManager::checkCollision(const Projectile& _projectil)
 
 	for (auto& player : PlayerManager::getPlayers())
 	{
-		if (player.m_id == _projectil.m_shooterId)
+		if (player.m_entity == _projectil.m_shooter)
 		{
 			continue;
 		}
@@ -136,7 +142,7 @@ bool ProjectileManager::checkCollision(const Projectile& _projectil)
 
 		if (distanceSquared <= radiusSum * radiusSum)
 		{
-			PlayerManager::playerHitByProjectile(player.m_id);
+			PlayerManager::playerHitByProjectile(player.m_entity);
 			return true;
 		}
 	}

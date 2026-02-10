@@ -20,12 +20,12 @@ namespace tra::ecs
 	{
 		uint32_t m_idAndVersion = 0;
 
-		bool operator==(Entity& _other) const
+		bool operator==(const Entity& _other) const
 		{
 			return m_idAndVersion == _other.m_idAndVersion;
 		}
 
-		bool operator!=(Entity& _other) const
+		bool operator!=(const Entity& _other) const
 		{
 			return !(*this == _other);
 		}
@@ -52,6 +52,18 @@ namespace tra::ecs
 	{
 		return Entity{ (_version << ENTITY_INDEX_BITS) | (_id & ENTITY_INDEX_MASK) };
 	}
+}
+
+namespace std
+{
+	template<>
+	struct hash<tra::ecs::Entity>
+	{
+		size_t operator()(const tra::ecs::Entity& _entity) const
+		{
+			return _entity.m_idAndVersion;
+		}
+	};
 }
 
 #endif

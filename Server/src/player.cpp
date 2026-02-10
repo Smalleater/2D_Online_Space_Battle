@@ -18,7 +18,7 @@ using namespace tra;
 using namespace tra::netcode;
 
 std::vector<Player> PlayerManager::m_players;
-std::map<ecs::Entity, size_t> PlayerManager::m_playersSparse;
+std::unordered_map<ecs::Entity, size_t> PlayerManager::m_playersSparse;
 
 void PlayerManager::removeDisconnectedPlayers()
 {
@@ -98,110 +98,99 @@ void PlayerManager::addNewPlayers()
 
 void PlayerManager::updatePlayers(float deltaTime)
 {
+	auto& queryResult = server::Server::Get()->getEcsWorld()->queryEntities(
+		ecs::WithComponent<>{},
+		ecs::WithoutComponent<>{},
+		ecs::WithTag<tags::ConnectedTag>{});
+
+	for (auto& [entity] : queryResult)
+	{
+		auto it = m_playersSparse.find(entity);
+		if (it == m_playersSparse.end())
+		{
+			continue;
+		}
+
+		Player& player = m_players.at(it->second);
+
+		auto movementInputMessages = server::Server::Get()->getTcpMessages(entity, "MovementInputMessage");
+		if (movementInputMessages.size() > 0)
+		{
+			auto movementMessage = std::dynamic_pointer_cast<message::MovementInputMessage>(movementInputMessages.back());
+
+			updatePlayerRotation(movementMessage->m_mouseWorldPosX, movementMessage->m_mouseWorldPosY, player);
+			updatePlayerMovement(movementMessage->m_moveDirectionX, movementMessage->m_moveDirectionY, player, deltaTime);
+
+			auto updateRotationAndPositionMessage = std::make_shared<message::UpdateRotationAndPositionMessage>();
+
+			updateRotationAndPositionMessage->m_id = player.m_entity.id();
+			updateRotationAndPositionMessage->m_rotation = player.m_rotation;
+			updateRotationAndPositionMessage->m_positionX = player.m_position.x;
+			updateRotationAndPositionMessage->m_positionY = player.m_position.y;
+
+			for (auto& [entityToSend] : queryResult)
+			{
+				if (entityToSend == entity)
+				{
+					continue;
+				}
+
+				server::Server::Get()->sendTcpMessage(entityToSend, updateRotationAndPositionMessage);
+			}
+		}
+
+		auto shootInputMessages = server::Server::Get()->getTcpMessages(entity, "ShootInputMessage");
+		if (shootInputMessages.size() > 0 && player.m_shootCooldown <= 0)
+		{
+			player.m_shootCooldown = SHOOT_COOLDOWN;
+			Vector2f direction(std::cos(player.m_rotation - M_PI / 2), std::sin(player.m_rotation - M_PI / 2));
+			ProjectileManager::createProjectile(player.m_entity, player.m_position, direction);
+		}
+
+		if (player.m_shootCooldown > 0)
+		{
+			player.m_shootCooldown -= deltaTime;
+		}
+	}
+}
+
+void PlayerManager::playerHitByProjectile(const tra::ecs::Entity _entity)
+{
+	auto it = m_playersSparse.find(_entity);
+	if (it == m_playersSparse.end())
+	{
+		return;
+	}
+
+	Player& player = m_players.at(it->second);
+
+	player.m_position = getRespawnPosition();
+
+	auto respawnMessage = std::make_shared<message::RespawnMessage>();
+
+	respawnMessage->m_positionX = player.m_position.x;
+	respawnMessage->m_positionY = player.m_position.y;
+
+	server::Server::Get()->sendTcpMessage(player.m_entity, respawnMessage);
+
+	auto updateRotationAndPositionMessage = std::make_shared<message::UpdateRotationAndPositionMessage>();
+
+	updateRotationAndPositionMessage->m_id = player.m_entity.id();
+	updateRotationAndPositionMessage->m_rotation = player.m_rotation;
+	updateRotationAndPositionMessage->m_positionX = player.m_position.x;
+	updateRotationAndPositionMessage->m_positionY = player.m_position.y;
+
 	for (auto& [entity] : server::Server::Get()->getEcsWorld()->queryEntities(
 		ecs::WithComponent<>{},
 		ecs::WithoutComponent<>{},
 		ecs::WithTag<tags::ConnectedTag>{}))
 	{
-
-	}
-
-	/////////////////////////////
-
-	std::shared_ptr<engine::UpdateRotationAndPositionMessage> updateRotationAndPositionMessage = nullptr;
-
-	std::pair<ErrorCode, std::vector<std::shared_ptr<engine::Message>>> messagesResult;
-
-	std::vector<engine::EntityId> playersId = server::Server::Get()->queryEntityIds<engine::NetworkRootComponentTag, engine::ConnectedComponentTag>();
-	for (size_t i = 0; i < playersId.size(); i++)
-	{
-		auto it = std::find_if(m_players.begin(), m_players.end(),
-			[playersId, i](const Player& player)
-			{
-				return player.m_id == playersId[i];
-			});
-
-		if (it == m_players.end())
+		if (entity == player.m_entity)
 		{
 			continue;
 		}
 
-		messagesResult = server::Server::Get()->getTcpMessages(playersId[i], "MovementInputMessage");
-		if (messagesResult.second.size() != 0)
-		{
-			std::shared_ptr<engine::MovementInputMessage> movementMessage =
-				std::dynamic_pointer_cast<engine::MovementInputMessage>(messagesResult.second[messagesResult.second.size() - 1]);
-			if (movementMessage)
-			{
-				updatePlayerRotation(movementMessage->m_mouseWorldPosX, movementMessage->m_mouseWorldPosY, it);
-				updatePlayerMovement(movementMessage->m_moveDirectionX, movementMessage->m_moveDirectionY, it, deltaTime);
-
-				updateRotationAndPositionMessage = std::make_shared<engine::UpdateRotationAndPositionMessage>();
-				updateRotationAndPositionMessage->m_id = it->m_id;
-				updateRotationAndPositionMessage->m_rotation = it->m_rotation;
-				updateRotationAndPositionMessage->m_positionX = it->m_position.x;
-				updateRotationAndPositionMessage->m_positionY = it->m_position.y;
-				for (size_t i = 0; i < playersId.size(); i++)
-				{
-					if (playersId[i] != it->m_id)
-					{
-						server::Server::Get()->sendTcpMessage(playersId[i], updateRotationAndPositionMessage);
-					}
-				}
-			}
-		}
-
-		messagesResult = server::Server::Get()->getTcpMessages(playersId[i], "ShootInputMessage");
-		if (messagesResult.second.size() != 0)
-		{
-			if (it->m_shootCooldown <= 0)
-			{
-				it->m_shootCooldown = SHOOT_COOLDOWN;
-				Vector2f direction(std::cos(it->m_rotation - M_PI / 2), std::sin(it->m_rotation - M_PI / 2));
-				ProjectileManager::createProjectile(it->m_id, it->m_position, direction);
-			}
-		}
-
-		if (it->m_shootCooldown > 0)
-		{
-			it->m_shootCooldown -= deltaTime;
-		}
-	}
-}
-
-void PlayerManager::playerHitByProjectile(const tra::ecs::Entity _playerEntity)
-{
-	auto it = std::find_if(m_players.begin(), m_players.end(),
-		[_playerEntity](const Player& player)
-		{
-			return player.m_id == _playerEntity;
-		});
-	if (it == m_players.end())
-	{
-		return;
-	}
-
-	it->m_position = getRespawnPosition();
-
-	std::shared_ptr<engine::RespawnMessage> respawnMessage = std::make_shared<engine::RespawnMessage>();
-	respawnMessage->m_positionX = it->m_position.x;
-	respawnMessage->m_positionY = it->m_position.y;
-	server::Server::Get()->sendTcpMessage(it->m_id, respawnMessage);
-
-	std::vector<engine::EntityId> playersId = server::Server::Get()->queryEntityIds<engine::NetworkRootComponentTag, engine::ConnectedComponentTag>();
-	std::shared_ptr<engine::UpdateRotationAndPositionMessage> updateRotationAndPositionMessage = std::make_shared<engine::UpdateRotationAndPositionMessage>();
-
-	updateRotationAndPositionMessage->m_id = it->m_id;
-	updateRotationAndPositionMessage->m_rotation = it->m_rotation;
-	updateRotationAndPositionMessage->m_positionX = it->m_position.x;
-	updateRotationAndPositionMessage->m_positionY = it->m_position.y;
-
-	for (size_t i = 0; i < playersId.size(); i++)
-	{
-		if (playersId[i] != it->m_id)
-		{
-			server::Server::Get()->sendTcpMessage(playersId[i], updateRotationAndPositionMessage);
-		}
+		server::Server::Get()->sendTcpMessage(entity, updateRotationAndPositionMessage);
 	}
 }
 
@@ -222,19 +211,19 @@ Vector2f PlayerManager::getRespawnPosition()
 	return respawnPosition;
 }
 
-void PlayerManager::updatePlayerRotation(const float _mouseWorldPosX, const float _mouseWorldPosY, std::vector<Player>::iterator& _it)
+void PlayerManager::updatePlayerRotation(const float _mouseWorldPosX, const float _mouseWorldPosY, Player& _player)
 {
-	_it->m_lastMousePosition = Vector2f(_mouseWorldPosX, _mouseWorldPosY);
+	_player.m_lastMousePosition = Vector2f(_mouseWorldPosX, _mouseWorldPosY);
 
-	float deltaX = _mouseWorldPosX - _it->m_position.x;
-	float deltaY = _mouseWorldPosY - _it->m_position.y;
+	float deltaX = _mouseWorldPosX - _player.m_position.x;
+	float deltaY = _mouseWorldPosY - _player.m_position.y;
 	float angleRadians = std::atan2(deltaY, deltaX) + 90.0f * (static_cast<float>(M_PI) / 180.0f);
-	_it->m_rotation = angleRadians;
+	_player.m_rotation = angleRadians;
 }
 
-void PlayerManager::updatePlayerMovement(const int _moveDirectionX, const int _moveDirectionY, std::vector<Player>::iterator& _it, const float deltaTime)
+void PlayerManager::updatePlayerMovement(const int _moveDirectionX, const int _moveDirectionY, Player& _player, const float deltaTime)
 {
-	float rotation = _it->m_rotation;
+	float rotation = _player.m_rotation;
 
 	Vector2f forwardDirection(std::cos(rotation), std::sin(rotation));
 	Vector2f rightDirection(-std::sin(rotation), std::cos(rotation));
@@ -243,34 +232,34 @@ void PlayerManager::updatePlayerMovement(const int _moveDirectionX, const int _m
 	movement += forwardDirection * static_cast<float>(_moveDirectionX) * MOVE_SPEED * deltaTime;
 	movement += rightDirection * static_cast<float>(_moveDirectionY) * MOVE_SPEED * deltaTime;
 
-	_it->m_position += movement;
+	_player.m_position += movement;
 
-	float shipToMouseDistance = std::sqrt((_it->m_lastMousePosition.x - _it->m_position.x)
-		* (_it->m_lastMousePosition.x - _it->m_position.x)
-		+ (_it->m_lastMousePosition.y - _it->m_position.y)
-		* (_it->m_lastMousePosition.y - _it->m_position.y));
+	float shipToMouseDistance = std::sqrt((_player.m_lastMousePosition.x - _player.m_position.x)
+		* (_player.m_lastMousePosition.x - _player.m_position.x)
+		+ (_player.m_lastMousePosition.y - _player.m_position.y)
+		* (_player.m_lastMousePosition.y - _player.m_position.y));
 
 	if (shipToMouseDistance < MOUSE_DEAD_ZONE)
 	{
-		_it->m_position -= movement;
+		_player.m_position -= movement;
 		return;
 	}
 
-	if (_it->m_position.x < 0.0f)
+	if (_player.m_position.x < 0.0f)
 	{
-		_it->m_position.x += WORLD_SIZE;
+		_player.m_position.x += WORLD_SIZE;
 	}
-	else if (_it->m_position.x >= WORLD_SIZE)
+	else if (_player.m_position.x >= WORLD_SIZE)
 	{
-		_it->m_position.x -= WORLD_SIZE;
+		_player.m_position.x -= WORLD_SIZE;
 	}
 
-	if (_it->m_position.y < 0.0f)
+	if (_player.m_position.y < 0.0f)
 	{
-		_it->m_position.y += WORLD_SIZE;
+		_player.m_position.y += WORLD_SIZE;
 	}
-	else if (_it->m_position.y >= WORLD_SIZE)
+	else if (_player.m_position.y >= WORLD_SIZE)
 	{
-		_it->m_position.y -= WORLD_SIZE;
+		_player.m_position.y -= WORLD_SIZE;
 	}
 }
