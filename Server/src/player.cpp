@@ -73,7 +73,9 @@ void PlayerManager::addNewPlayers()
 		newPlayer.m_lastMousePosition = Vector2f(0, 0);
 		newPlayer.m_rotation = 0.0f;
 		newPlayer.m_shootCooldown = 0.0f;
+
 		m_players.push_back(newPlayer);
+		m_playersSparse.insert({ newConnectionEntity, m_players.size() - 1 });
 
 		std::shared_ptr<message::RespawnMessage> respawnMessage = std::make_shared<message::RespawnMessage>();
 		respawnMessage->m_positionX = newPlayer.m_position.x;
@@ -81,11 +83,13 @@ void PlayerManager::addNewPlayers()
 		server::Server::Get()->sendTcpMessage(newConnectionEntity, respawnMessage);
 
 		auto newClientMessage = std::make_shared<message::NewClientMessage>();
+		newClientMessage->m_id = newConnectionEntity.id();
 
 		for (auto& [entity] : server::Server::Get()->getEcsWorld()->queryEntities(
 			ecs::WithComponent<>{},
 			ecs::WithoutComponent<>{},
-			ecs::WithTag<tags::ConnectedTag>{}))
+			ecs::WithTag<tags::ConnectedTag>{},
+			ecs::WithoutTag<tags::NewConnectionTag>{}))
 		{
 			server::Server::Get()->sendTcpMessage(entity, newClientMessage);
 

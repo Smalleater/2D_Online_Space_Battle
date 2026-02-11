@@ -2,7 +2,7 @@
 
 #define _USE_MATH_DEFINES
 #include <math.h>
-#include <TRA/client/client.hpp>
+#include <TRA/netcode/client/client.hpp>
 
 #include "gameMessage.hpp"
 
@@ -13,13 +13,14 @@ sf::Texture* ProjectileManager::m_texture = nullptr;
 std::vector<std::pair<int, Projectile>> ProjectileManager::m_projectiles;
 
 using namespace tra;
+using namespace tra::netcode;
 
 void ProjectileManager::UpdateProjectiles(const float deltaTime)
 {
 	auto newProjectileMessages = client::Client::Get()->getTcpMessages("NewProjectileMessage");
-	for (auto newProjectileMessage : newProjectileMessages.second)
+	for (auto newProjectileMessage : newProjectileMessages)
 	{
-		auto castedMessage = std::static_pointer_cast<engine::NewProjectileMessage>(newProjectileMessage);
+		auto castedMessage = std::static_pointer_cast<message::NewProjectileMessage>(newProjectileMessage);
 		float positionX = castedMessage->m_positionX;
 		float positionY = castedMessage->m_positionY;
 		float directionX = castedMessage->m_directionX;
@@ -29,9 +30,9 @@ void ProjectileManager::UpdateProjectiles(const float deltaTime)
 	}
 
 	auto removeProjectileMessages = client::Client::Get()->getTcpMessages("DeleteProjectileMessage");
-	for (auto removeProjectileMessage : removeProjectileMessages.second)
+	for (auto removeProjectileMessage : removeProjectileMessages)
 	{
-		auto castedMessage = std::static_pointer_cast<engine::DeleteProjectileMessage>(removeProjectileMessage);
+		auto castedMessage = std::static_pointer_cast<message::DeleteProjectileMessage>(removeProjectileMessage);
 		int projectileId = castedMessage->m_projectileId;
 		for (auto it = m_projectiles.begin(); it != m_projectiles.end(); ++it)
 		{
@@ -44,9 +45,9 @@ void ProjectileManager::UpdateProjectiles(const float deltaTime)
 	}
 
 	auto updateProjectilePositionMessages = client::Client::Get()->getTcpMessages("UpdateProjectilePositionMessage");
-	for (auto updateProjectilePositionMessage : updateProjectilePositionMessages.second)
+	for (auto updateProjectilePositionMessage : updateProjectilePositionMessages)
 	{
-		auto castedMessage = std::static_pointer_cast<engine::UpdateProjectilePositionMessage>(updateProjectilePositionMessage);
+		auto castedMessage = std::static_pointer_cast<message::UpdateProjectilePositionMessage>(updateProjectilePositionMessage);
 		int projectileId = castedMessage->m_projectileId;
 		float positionX = castedMessage->m_positionX;
 		float positionY = castedMessage->m_positionY;

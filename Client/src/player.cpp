@@ -2,7 +2,7 @@
 
 #define _USE_MATH_DEFINES
 #include <math.h>
-#include <TRA/client/client.hpp>
+#include <TRA/netcode/client/client.hpp>
 
 #include "gameMessage.hpp"
 
@@ -13,6 +13,7 @@ constexpr float WORLD_SIZE = 800.0f;
 constexpr float MOUSE_DEAD_ZONE = 5.0f;
 
 using namespace tra;
+using namespace tra::netcode;
 
 static inline int signf(float v) { return (v > 0.0f) - (v < 0.0f); }
 
@@ -153,9 +154,9 @@ void Player::Update(const float _dt, const sf::RenderWindow& _window)
 	}
 
 	auto respawnMessage = client::Client::Get()->getTcpMessages("RespawnMessage");
-	if (!respawnMessage.second.empty())
+	if (!respawnMessage.empty())
 	{
-		auto castedMessage = std::static_pointer_cast<engine::RespawnMessage>(respawnMessage.second.back());
+		auto castedMessage = std::static_pointer_cast<message::RespawnMessage>(respawnMessage.back());
 		float positionX = castedMessage->m_positionX;
 		float positionY = castedMessage->m_positionY;
 		m_sprite->setPosition(sf::Vector2f(positionX, positionY));
@@ -166,7 +167,7 @@ void Player::Update(const float _dt, const sf::RenderWindow& _window)
 		}
 	}
 
-	std::shared_ptr<engine::MovementInputMessage> movementInputMessage = std::make_shared<engine::MovementInputMessage>();
+	std::shared_ptr<message::MovementInputMessage> movementInputMessage = std::make_shared<message::MovementInputMessage>();
 
 	UpdateRotation(movementInputMessage, _dt, _window);
 	Move(movementInputMessage, _dt);
@@ -175,7 +176,7 @@ void Player::Update(const float _dt, const sf::RenderWindow& _window)
 
 	if (m_isShooting)
 	{
-		std::shared_ptr<engine::ShootInputMessage> playerShootMessage = std::make_shared<engine::ShootInputMessage>();
+		std::shared_ptr<message::ShootInputMessage> playerShootMessage = std::make_shared<message::ShootInputMessage>();
 		client::Client::Get()->sendTcpMessage(playerShootMessage);
 	}
 }
@@ -185,7 +186,7 @@ void Player::Draw(sf::RenderWindow& _window)
 	_window.draw(*m_sprite);
 }
 
-void Player::UpdateRotation(std::shared_ptr<engine::MovementInputMessage> _movementInputMessage, const float _dt, const sf::RenderWindow& _window)
+void Player::UpdateRotation(std::shared_ptr<message::MovementInputMessage> _movementInputMessage, const float _dt, const sf::RenderWindow& _window)
 {
 	sf::Vector2f worldMousePosition;
 
@@ -212,7 +213,7 @@ void Player::UpdateRotation(std::shared_ptr<engine::MovementInputMessage> _movem
 	m_sprite->setRotation(sf::radians(angleRadians));
 }
 
-void Player::Move(std::shared_ptr<engine::MovementInputMessage> _movementInputMessage, const float _dt)
+void Player::Move(std::shared_ptr<message::MovementInputMessage> _movementInputMessage, const float _dt)
 {
 	_movementInputMessage->m_moveDirectionX = m_moveDirection.x;
 	_movementInputMessage->m_moveDirectionY = m_moveDirection.y;

@@ -1,5 +1,5 @@
 #include <SFML/Graphics.hpp>
-#include <TRA/client/client.hpp>
+#include <TRA/netcode/client/client.hpp>
 
 #include "player.hpp"
 #include "enemy.hpp"
@@ -8,6 +8,7 @@
 constexpr bool EnableBot = false;
 
 using namespace tra;
+using namespace tra::netcode;
 
 int main()
 {

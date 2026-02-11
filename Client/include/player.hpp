@@ -38,8 +38,8 @@ private:
 	float m_botChangeTimer = 0.0f;
 	float m_shootCooldown = 0.0f;
 
-	void UpdateRotation(std::shared_ptr<tra::engine::MovementInputMessage> _movementInputMessage, const float _dt, const sf::RenderWindow& _window);
-	void Move(std::shared_ptr<tra::engine::MovementInputMessage> _movementInputMessage, const float _dt);
+	void UpdateRotation(std::shared_ptr<tra::message::MovementInputMessage> _movementInputMessage, const float _dt, const sf::RenderWindow& _window);
+	void Move(std::shared_ptr<tra::message::MovementInputMessage> _movementInputMessage, const float _dt);
 };
 
 #endif

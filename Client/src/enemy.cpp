@@ -1,13 +1,14 @@
 #include "enemy.hpp"
 
-#include <TRA/client/client.hpp>
-#include <TRA/engine/message.hpp>
+#include <TRA/netcode/client/client.hpp>
+#include <TRA/netcode/engine/message.hpp>
 
 #include "gameMessage.hpp"
 
 #define SPRITE_LOAD_PATH "resources/sprites/enemy.png"
 
 using namespace tra;
+using namespace tra::netcode;
 
 std::map<int, Enemy> EnemyManager::m_enemies;
 
@@ -17,9 +18,9 @@ void EnemyManager::UpdateEnemis()
 	CheckDisconnectedEnemy();
 
 	auto rotationAndPositionUpdates = client::Client::Get()->getTcpMessages("UpdateRotationAndPositionMessage");
-	for (auto rotationAndPositionUpdate : rotationAndPositionUpdates.second)
+	for (auto rotationAndPositionUpdate : rotationAndPositionUpdates)
 	{
-		auto castedMessage = std::static_pointer_cast<engine::UpdateRotationAndPositionMessage>(rotationAndPositionUpdate);
+		auto castedMessage = std::static_pointer_cast<message::UpdateRotationAndPositionMessage>(rotationAndPositionUpdate);
 
 		int id = castedMessage->m_id;
 		float rotation = castedMessage->m_rotation;
@@ -46,9 +47,9 @@ void EnemyManager::DrawEnemis(sf::RenderWindow& window)
 void EnemyManager::CheckNewEnemy()
 {
 	auto newEnemys = client::Client::Get()->getTcpMessages("NewClientMessage");
-	for (auto newEnemy : newEnemys.second)
+	for (auto newEnemy : newEnemys)
 	{
-		auto castedMessage = std::static_pointer_cast<engine::NewClientMessage>(newEnemy);
+		auto castedMessage = std::static_pointer_cast<message::NewClientMessage>(newEnemy);
 		int id = castedMessage->m_id;
 
 		Enemy* enemy = new Enemy();
@@ -56,6 +57,7 @@ void EnemyManager::CheckNewEnemy()
 		{
 			throw std::runtime_error("Failed to load player sprite texture from " SPRITE_LOAD_PATH);
 		}
+
 		enemy->m_sprite = new sf::Sprite(enemy->m_texture);
 		enemy->m_sprite->setOrigin(sf::Vector2f(enemy->m_texture.getSize().x / 2.f, enemy->m_texture.getSize().y / 2.f));
 		m_enemies[id] = *enemy;
@@ -65,9 +67,9 @@ void EnemyManager::CheckNewEnemy()
 void EnemyManager::CheckDisconnectedEnemy()
 {
 	auto disconnectedEnemys = client::Client::Get()->getTcpMessages("DisconnectedClientMessage");
-	for (auto disconnectedEnemy : disconnectedEnemys.second)
+	for (auto disconnectedEnemy : disconnectedEnemys)
 	{
-		auto castedMessage = std::static_pointer_cast<engine::DisconnectedClientMessage>(disconnectedEnemy);
+		auto castedMessage = std::static_pointer_cast<message::DisconnectedClientMessage>(disconnectedEnemy);
 		int id = castedMessage->m_id;
 		m_enemies.erase(id);
 	}
