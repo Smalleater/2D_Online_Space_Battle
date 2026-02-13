@@ -1,9 +1,12 @@
 #include "projectile.hpp"
 
 #include <TRA/netcode/server/server.hpp>
+#include <TRA/netcode/server/tags.hpp>
+
 #include <TRA/netcode/engine/tags.hpp>
 
 #include "gameMessage.hpp"
+#include "tags.hpp"
 #include "player.hpp"
 
 constexpr float WORLD_SIZE = 800.0f;
@@ -37,7 +40,7 @@ void ProjectileManager::createProjectile(const tra::ecs::Entity _m_shooter, cons
 	for (auto& [entity] : server::Server::Get()->getEcsWorld()->queryEntities(
 		ecs::WithComponent<>{},
 		ecs::WithoutComponent<>{},
-		ecs::WithTag<tags::ConnectedTag>{}))
+		ecs::WithTag<engine::tags::ConnectedTag, server::tags::ClientIsReadyTag, PlayerIsInitialized>{}))
 	{
 		server::Server::Get()->sendTcpMessage(entity, newProjectileMessage);
 	}
@@ -48,7 +51,7 @@ void ProjectileManager::updateProjectiles(const float deltaTime)
 	auto queryResult = server::Server::Get()->getEcsWorld()->queryEntities(
 		ecs::WithComponent<>{},
 		ecs::WithoutComponent<>{},
-		ecs::WithTag<tags::ConnectedTag>{});
+		ecs::WithTag<tags::ConnectedTag, server::tags::ClientIsReadyTag, PlayerIsInitialized>{});
 
 	for (size_t i = 0; i < m_projectiles.size(); i++)
 	{
@@ -60,7 +63,7 @@ void ProjectileManager::updateProjectiles(const float deltaTime)
 			continue;
 		}
 
-		if (checkCollision(m_projectiles[i]))
+		if (checkCollision(m_projectiles[i], i))
 		{
 			removeProjectile(i);
 			i--;
@@ -98,7 +101,7 @@ void ProjectileManager::removeProjectile(size_t _index)
 	for (auto& [entity] : server::Server::Get()->getEcsWorld()->queryEntities(
 		ecs::WithComponent<>{},
 		ecs::WithoutComponent<>{},
-		ecs::WithTag<tags::ConnectedTag>{}))
+		ecs::WithTag<tags::ConnectedTag, server::tags::ClientIsReadyTag, PlayerIsInitialized>{}))
 	{
 		server::Server::Get()->sendTcpMessage(entity, removeProjectileMessage);
 	}
@@ -106,17 +109,12 @@ void ProjectileManager::removeProjectile(size_t _index)
 	m_projectiles.erase(m_projectiles.begin() + _index);
 }
 
-bool ProjectileManager::checkCollision(const Projectile& _projectil)
+bool ProjectileManager::checkCollision(const Projectile& _projectil, const size_t _projectilIndex)
 {
-	for (auto& projectile : m_projectiles)
+	for (size_t i = _projectilIndex + 1; i < m_projectiles.size(); i++)
 	{
-		if (projectile.m_id == _projectil.m_id)
-		{
-			continue;
-		}
-
-		float dx = _projectil.m_position.x - projectile.m_position.x;
-		float dy = _projectil.m_position.y - projectile.m_position.y;
+		float dx = _projectil.m_position.x - m_projectiles[i].m_position.x;
+		float dy = _projectil.m_position.y - m_projectiles[i].m_position.y;
 
 		float distanceSquared = dx * dx + dy * dy;
 		float radiusSum = PROJECTILE_RADIUS + PROJECTILE_RADIUS;

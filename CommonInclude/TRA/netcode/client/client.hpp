@@ -22,10 +22,18 @@ namespace tra::netcode::client
 
 		TRA_API static Client* Get();
 
-		TRA_API ErrorCode ConnectTo(const std::string& _address, uint16_t _port);
-		TRA_API ErrorCode Disconnect();
+		TRA_API ErrorCode connectTo(const std::string& _address, uint16_t _port);
+		TRA_API ErrorCode disconnect();
 
-		TRA_API bool IsConnected() const;
+		TRA_API bool isConnected() const;
+		TRA_API bool isReady() const;
+
+		TRA_API uint32_t getCurrentTick();
+		TRA_API float getFixedDeltaTime();
+
+		TRA_API bool canUpdateNetcode();
+
+		TRA_API void updateElapsedTime();
 
 		TRA_API void beginUpdate();
 		TRA_API void endUpdate();
@@ -38,10 +46,12 @@ namespace tra::netcode::client
 	private:
 		static Client* m_singleton;
 
-		engine::NetworkEngine* m_networkEngine;
+		std::unique_ptr<engine::NetworkEngine> m_networkEngine;
 
-		Client();
+		Client() = default;
 		~Client();
+
+		void receiveInitializeClient();
 	};
 }
 

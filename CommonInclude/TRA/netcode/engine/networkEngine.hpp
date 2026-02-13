@@ -5,6 +5,7 @@
 #include "TRA/errorCode.hpp"
 
 #include <cstdint>
+#include <chrono>
 
 #include "TRA/ecs/world.hpp"
 
@@ -29,6 +30,18 @@ namespace tra::netcode::engine
 		TRA_API void stopTcpConnect();
 		//TRA_API ErrorCode stopUdp();
 
+		TRA_API void setTickRate(uint8_t _tickRate);
+
+		TRA_API uint8_t getTickRate();
+		TRA_API uint32_t getCurrentTick();
+		TRA_API float getFixedDeltaTime();
+
+		TRA_API void resetElapsedTime();
+
+		TRA_API bool canUpdateNetcode();
+
+		TRA_API void updateElapsedTime();
+		
 		TRA_API void beginUpdate();
 		TRA_API void endUpdate();
 
@@ -44,6 +57,16 @@ namespace tra::netcode::engine
 		std::unique_ptr<ecs::World> m_ecsWorld;
 
 		ecs::Entity m_selfEntity;
+
+		uint32_t m_currentTick;
+
+		std::chrono::time_point<std::chrono::high_resolution_clock> m_lastElapsedTimeUpdate;
+
+		float m_fixedDeltaTime;
+		float m_elapsedTime;
+
+		uint8_t m_tickRate;
+		std::chrono::high_resolution_clock m_clock;
 	};
 }
 

@@ -8,7 +8,7 @@
 constexpr bool EnableBot = false;
 
 using namespace tra;
-using namespace tra::netcode;
+using namespace tra::netcode::client;
 
 int main()
 {
@@ -20,7 +20,7 @@ int main()
 	std::cout << "Enter connection port: ";
 	std::cin >> port;*/
 
-	client::Client::Get()->ConnectTo(address, port);
+	Client::Get()->connectTo(address, port);
 
 	Player player;
 	player.SetIsBot(EnableBot);
@@ -30,11 +30,9 @@ int main()
 	window.setKeyRepeatEnabled(false);
 
 	sf::Clock clock;
-	while (window.isOpen() && client::Client::Get()->IsConnected())
+	while (window.isOpen() && Client::Get()->isConnected())
 	{
 		float deltaTime = clock.restart().asSeconds();
-
-		client::Client::Get()->beginUpdate();
 
 		while (const std::optional event = window.pollEvent())
 		{
@@ -46,11 +44,28 @@ int main()
 			player.PollEvents(event);
 		}
 
-		player.Update(deltaTime, window);
-		ProjectileManager::UpdateProjectiles(deltaTime);
-		EnemyManager::UpdateEnemis();
+		std::cout << Client::Get()->getCurrentTick() << std::endl;
 
-		client::Client::Get()->endUpdate();
+		Client::Get()->updateElapsedTime();
+		while (Client::Get()->canUpdateNetcode())
+		{
+			std::cout << "Update netcode" << std::endl;
+
+			Client::Get()->beginUpdate();
+
+			if (Client::Get()->isReady())
+			{
+				std::cout << "Is ready" << std::endl;
+
+				float fixedDeltatime = Client::Get()->getFixedDeltaTime();
+
+				player.Update(fixedDeltatime, window);
+				ProjectileManager::UpdateProjectiles(fixedDeltatime);
+				EnemyManager::UpdateEnemis();
+			}
+
+			Client::Get()->endUpdate();
+		}
 
 		window.clear();
 		if (!EnableBot)
@@ -60,10 +75,5 @@ int main()
 			player.Draw(window);
 		}
 		window.display();
-	}
-
-	if (client::Client::Get()->IsConnected())
-	{
-		client::Client::Get()->Disconnect();
 	}
 }

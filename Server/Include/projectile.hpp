@@ -27,7 +27,7 @@ private:
 	static uint32_t m_nextProjectileId;
 
 	static void removeProjectile(size_t index);
-	static bool checkCollision(const Projectile& _projectil);
+	static bool checkCollision(const Projectile& _projectil, const size_t _projectilIndex);
 };
 
 #endif

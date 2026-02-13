@@ -3,9 +3,12 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+#include "TRA/netcode/server/tags.hpp"
+
 #include "TRA/netcode/engine/tags.hpp"
 
 #include "gameMessage.hpp"
+#include "tags.hpp"
 #include "projectile.hpp"
 
 constexpr float MOVE_SPEED = 200.0f;
@@ -42,7 +45,7 @@ void PlayerManager::removeDisconnectedPlayers()
 		for (auto& [entity] : server::Server::Get()->getEcsWorld()->queryEntities(
 			ecs::WithComponent<>{},
 			ecs::WithoutComponent<>{},
-			ecs::WithTag<tags::ConnectedTag>{}))
+			ecs::WithTag<engine::tags::ConnectedTag, server::tags::ClientIsReadyTag, PlayerIsInitialized>{}))
 		{
 			server::Server::Get()->sendTcpMessage(entity, disconnectedClientMessage);
 		}
@@ -62,41 +65,45 @@ void PlayerManager::removeDisconnectedPlayers()
 
 void PlayerManager::addNewPlayers()
 {
-	for (auto& [newConnectionEntity] : server::Server::Get()->getEcsWorld()->queryEntities(
+	for (auto& [initializedPlayerEntity] : server::Server::Get()->getEcsWorld()->queryEntities(
 		ecs::WithComponent<>{},
 		ecs::WithoutComponent<>{},
-		ecs::WithTag<tags::NewConnectionTag>{}))
+		ecs::WithTag<engine::tags::ConnectedTag, server::tags::ClientIsReadyTag>{},
+		ecs::WithoutTag<PlayerIsInitialized>{}))
 	{
+		TRA_ERROR_LOG("Start add new player");
+
 		Player newPlayer;
-		newPlayer.m_entity = newConnectionEntity;
+		newPlayer.m_entity = initializedPlayerEntity;
 		newPlayer.m_position = getRespawnPosition();
 		newPlayer.m_lastMousePosition = Vector2f(0, 0);
 		newPlayer.m_rotation = 0.0f;
 		newPlayer.m_shootCooldown = 0.0f;
 
 		m_players.push_back(newPlayer);
-		m_playersSparse.insert({ newConnectionEntity, m_players.size() - 1 });
+		m_playersSparse.insert({ initializedPlayerEntity, m_players.size() - 1 });
 
 		std::shared_ptr<message::RespawnMessage> respawnMessage = std::make_shared<message::RespawnMessage>();
 		respawnMessage->m_positionX = newPlayer.m_position.x;
 		respawnMessage->m_positionY = newPlayer.m_position.y;
-		server::Server::Get()->sendTcpMessage(newConnectionEntity, respawnMessage);
+		server::Server::Get()->sendTcpMessage(initializedPlayerEntity, respawnMessage);
 
 		auto newClientMessage = std::make_shared<message::NewClientMessage>();
-		newClientMessage->m_id = newConnectionEntity.id();
+		newClientMessage->m_id = initializedPlayerEntity.id();
 
 		for (auto& [entity] : server::Server::Get()->getEcsWorld()->queryEntities(
 			ecs::WithComponent<>{},
 			ecs::WithoutComponent<>{},
-			ecs::WithTag<tags::ConnectedTag>{},
-			ecs::WithoutTag<tags::NewConnectionTag>{}))
+			ecs::WithTag<engine::tags::ConnectedTag, server::tags::ClientIsReadyTag, PlayerIsInitialized>{}))
 		{
 			server::Server::Get()->sendTcpMessage(entity, newClientMessage);
 
-			auto oldNewClientMessage = std::make_shared<message::NewClientMessage>();
-			oldNewClientMessage->m_id = entity.id();
-			server::Server::Get()->sendTcpMessage(newConnectionEntity, oldNewClientMessage);
+			auto existingClientMessage = std::make_shared<message::NewClientMessage>();
+			existingClientMessage->m_id = entity.id();
+			server::Server::Get()->sendTcpMessage(initializedPlayerEntity, existingClientMessage);
 		}
+
+		server::Server::Get()->getEcsWorld()->addTag<PlayerIsInitialized>(initializedPlayerEntity);
 	}
 }
 
@@ -105,7 +112,7 @@ void PlayerManager::updatePlayers(float deltaTime)
 	auto& queryResult = server::Server::Get()->getEcsWorld()->queryEntities(
 		ecs::WithComponent<>{},
 		ecs::WithoutComponent<>{},
-		ecs::WithTag<tags::ConnectedTag>{});
+		ecs::WithTag<engine::tags::ConnectedTag, server::tags::ClientIsReadyTag, PlayerIsInitialized>{});
 
 	for (auto& [entity] : queryResult)
 	{
@@ -187,7 +194,7 @@ void PlayerManager::playerHitByProjectile(const tra::ecs::Entity _entity)
 	for (auto& [entity] : server::Server::Get()->getEcsWorld()->queryEntities(
 		ecs::WithComponent<>{},
 		ecs::WithoutComponent<>{},
-		ecs::WithTag<tags::ConnectedTag>{}))
+		ecs::WithTag<tags::ConnectedTag, PlayerIsInitialized>{}))
 	{
 		if (entity == player.m_entity)
 		{
